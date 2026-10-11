@@ -72,7 +72,7 @@ class ChatReplyJob < ApplicationJob
       config.request_timeout = 60
       config.max_retries = 0
     end
-    context.chat(model: ENV.fetch("OPENAI_MODEL"), provider: :openai, assume_model_exists: true)
+    context.chat(model: ENV.fetch("OPENAI_MODEL"), provider: :openai, protocol: :chat_completions, assume_model_exists: true)
   end
 
   def instructions_for(image)

@@ -113,6 +113,8 @@ bin/rails test
 bin/rails zeitwerk:check
 bin/rubocop
 bin/brakeman --quiet --no-pager
+bin/bundler-audit check --update
+bin/importmap audit
 ~~~
 
 The integration suite uses deterministic synthetic images, real SQLite/Active Record, and a local HTTP streaming fixture at the provider boundary. It covers source preservation, read-only exact copies, duplicate jobs, rejected archives/invalid images, existing-output collisions, chat context ordering, pending-request exclusion, provider failures/secret redaction, unsafe or mutated launch inputs, SSE reconnect snapshots, HTML escaping, and missing-image errors.
@@ -131,7 +133,9 @@ Observed verification for this release:
 
 For the remaining hands-on check, connect your DualSense over USB or Bluetooth, open the running PCSX2 window, and use Settings → Controllers → Controller Port 1 → Automatic Mapping. Choose the detected controller, then confirm menus, steering, and acceleration in a race. Desktop automation requires macOS permissions granted by the user; those permissions are not required to play manually.
 
-Brakeman runs with all default checks and warning failures enabled: the corrected storage boundary produces zero warnings and zero scanner errors. Image staging/import IO belongs to GameImage, behind strict UUID, fixed-filename, and symlink checks; the controller and job only orchestrate it. Reply locks use validated integer job identities and refuse symlinks/hardlinks. Bundler Audit and Importmap Audit also passed locally. No scanner checks were disabled and no ignore entries were added. RubyLLM 1.16 still emits an upstream legacy Active Record API deprecation at boot; this app uses its context/chat API, not the legacy acts_as API.
+Brakeman runs with all default checks and warning failures enabled: the corrected storage boundary produces zero warnings and zero scanner errors. Image staging/import IO belongs to GameImage, behind strict UUID, fixed-filename, and symlink checks; the controller and job only orchestrate it. Reply locks use validated integer job identities and refuse symlinks/hardlinks. Bundler Audit with freshly updated advisory data and Importmap Audit passed locally. Both GitHub CI and bin/ci refresh the gem advisory database before scanning. No scanner checks were disabled; the vulnerability ignore list is empty.
+
+RubyLLM 2.0 fixes CVE-2026-67987 affecting the previously installed 1.16 release. Chats explicitly select the Chat Completions protocol because RubyLLM 2.0 otherwise defaults OpenAI requests to the Responses API. The existing OpenAI-compatible endpoint contract, partial/completed SSE delivery, and application-owned Active Record messages are preserved. The upgraded SDK was exercised through a local HTTP model fixture and the actual browser/worker workflow; this is not a live OpenAI account verification.
 
 ## Troubleshooting
 
