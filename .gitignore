@@ -1,0 +1,19 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+/storage/
+/tmp/
+/log/
+*.iso
+*.chd
+*.7z
+*.zip
+/config/master.key
+
+# Ignore key files for decrypting credentials and more.
+/config/*.key
+
+
+/app/assets/builds/*
+!/app/assets/builds/.keep

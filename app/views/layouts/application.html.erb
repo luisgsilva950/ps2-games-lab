@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "PS2 Games Lab" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="application-name" content="PS2 Games Lab">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <%= link_to root_path, class: "brand" do %>
+        <span class="brand-mark" aria-hidden="true">II</span>
+        <span>PS2 <strong>Games Lab</strong></span>
+      <% end %>
+      <span class="local-badge"><span aria-hidden="true"></span> Local workspace</span>
+    </header>
+    <main id="main" class="workspace">
+      <% flash.each do |type, message| %>
+        <div class="notice <%= type == "alert" ? "notice-error" : "" %>" role="<%= type == "alert" ? "alert" : "status" %>"><%= message %></div>
+      <% end %>
+      <%= yield %>
+    </main>
+    <footer class="site-footer">Your images stay local. PCSX2 runs in its own desktop window.</footer>
+  </body>
+</html>
