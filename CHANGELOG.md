@@ -9,4 +9,6 @@
 - Added automatic development/test loading from Git-ignored `.env`, with `.env.example` setup instructions.
 - Fixed PCSX2 2.8.2 custom data-directory layout so the emulator reads the generated BIOS configuration.
 - Verified a real local Midnight Club 3: DUB Edition Remix import, preserved source/copy hashes, BIOS loading, Metal initialization, and game ELF execution. Visual gameplay and controller input remain unverified.
+- Fixed security CI file-access findings without ignores or disabled checks: moved image IO into the validated model boundary, enforced canonical UUIDs/fixed filenames, and rejected storage-parent and reply-lock links.
+- Added failing-before/passing-after security regressions and verified browser import plus partial/completed SSE chat through the real worker; all local CI commands pass.
 - Binary inspection, patch approval, and modified-image builds are not part of this release.

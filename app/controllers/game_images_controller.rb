@@ -12,11 +12,7 @@ class GameImagesController < ApplicationController
      return render json: { error: "Choose an extracted .iso disc image. ZIP and 7z archives are not supported." }, status: :unprocessable_entity
    end
    image = GameImage.create!(name: File.basename(upload.original_filename.tr("\\", "/")), storage_key: SecureRandom.uuid)
-   FileUtils.mkdir_p(image.incoming_path.dirname, mode: 0o700)
-   File.open(image.incoming_path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |output|
-     upload.tempfile.rewind
-    IO.copy_stream(upload.tempfile, output)
-   end
+   image.stage_upload!(upload.tempfile)
    ImportImageJob.perform_later(image.id)
    render json: { url: game_image_path(image) }, status: :accepted
   rescue StandardError => error

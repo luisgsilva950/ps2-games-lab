@@ -46,7 +46,7 @@ OPENAI_API_KEY=your-private-api-key
 
 Use your provider's exact model ID. For another OpenAI-compatible server, change OPENAI_API_BASE to its API base URL, typically ending in /v1. It must support streaming chat completions. Local servers may use a nonempty placeholder key if they do not require authentication.
 
-dotenv-rails automatically loads .env in development and test; existing shell environment variables take precedence. The file is ignored by Git. Restart both Rails and the worker after changes. Do not commit credentials or paste them into chat. Production configuration uses the process environment.
+dotenv-rails automatically loads .env in development and test; existing shell environment variables take precedence when starting Rails directly. Foreman also reads .env by default. For shell overrides with bin/dev, use `bin/dev --env /dev/null`; Rails still loads unset values from .env. The file is ignored by Git. Restart both Rails and the worker after changes. Do not commit credentials or paste them into chat. Production configuration uses the process environment.
 
 The endpoint receives the conversation and image metadata: name, size, SHA-256, and import status. **ISO contents are not transmitted.** Endpoint configuration is local environment configuration, not model-controlled input. Provider requests can incur charges.
 
@@ -119,7 +119,7 @@ The integration suite uses deterministic synthetic images, real SQLite/Active Re
 
 Observed verification for this release:
 
-- 12 integration tests, 82 assertions passed.
+- 14 integration tests, 90 assertions passed, including storage-parent and reply-lock symlink regressions that failed against the previous implementation.
 - Browser file-picker upload and automatic drop import completed through the real Solid Queue worker.
 - Browser observed partial SSE content before completion; an unsent draft survived completion.
 - Desktop and 390px-wide UI checked; no horizontal overflow at 390px.
@@ -131,7 +131,7 @@ Observed verification for this release:
 
 For the remaining hands-on check, connect your DualSense over USB or Bluetooth, open the running PCSX2 window, and use Settings → Controllers → Controller Port 1 → Automatic Mapping. Choose the detected controller, then confirm menus, steering, and acceleration in a race. Desktop automation requires macOS permissions granted by the user; those permissions are not required to play manually.
 
-Brakeman currently reports seven file-access warnings for model-derived managed image paths and the numeric reply-lock filename. Those paths use generated/validated identifiers rather than user-supplied filesystem paths; the warnings remain visible and are not suppressed. The Brakeman security CI job currently fails on them. A clean static-analysis result is not claimed. RubyLLM 1.16 also emits an upstream legacy Active Record API deprecation at boot; this app uses its context/chat API, not the legacy acts_as API.
+Brakeman runs with all default checks and warning failures enabled: the corrected storage boundary produces zero warnings and zero scanner errors. Image staging/import IO belongs to GameImage, behind strict UUID, fixed-filename, and symlink checks; the controller and job only orchestrate it. Reply locks use validated integer job identities and refuse symlinks/hardlinks. Bundler Audit and Importmap Audit also passed locally. No scanner checks were disabled and no ignore entries were added. RubyLLM 1.16 still emits an upstream legacy Active Record API deprecation at boot; this app uses its context/chat API, not the legacy acts_as API.
 
 ## Troubleshooting
 

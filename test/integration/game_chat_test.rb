@@ -57,4 +57,21 @@ class GameChatTest < ActionDispatch::IntegrationTest
   @image.update!(status: "importing")
   assert_no_difference("Message.count") { post game_image_messages_path(@image), params: { content: "hello" } }
  end
+
+ test "symlinked reply lock cannot create an outside file or call the provider" do
+   configure
+   post game_image_messages_path(@image), params: { content: "Inspect handling" }
+   reply = @image.messages.pending.sole
+   Dir.mktmpdir("lab-lock") do |directory|
+     root = Pathname.new(directory)
+     locks = root.join("tmp", "chat_reply_locks")
+     FileUtils.mkdir_p(locks)
+     outside = root.join("outside.lock")
+     File.symlink(outside, locks.join("#{reply.id}.lock"))
+     Rails.stub(:root, root) { ChatReplyJob.perform_now(reply.id) }
+     assert_equal "failed", reply.reload.status
+     assert_not File.exist?(outside)
+     assert @endpoint.requests.empty?, "unsafe lock must prevent a provider request"
+   end
+ end
 end

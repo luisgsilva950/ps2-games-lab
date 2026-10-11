@@ -7,13 +7,16 @@ class ChatReplyJob < ApplicationJob
   MAX_PROMPT_LENGTH = 32_000
 
   def perform(message_id)
+    message_id = Integer(message_id.to_s, 10)
     reply = Message.find_by(id: message_id, role: "assistant", status: "pending")
     return unless reply
 
     # Local workers share this advisory lock. No database transaction spans the HTTP request.
     lock_root = Rails.root.join("tmp", "chat_reply_locks")
+    raise "Unsafe reply lock directory" if File.symlink?(lock_root.parent) || File.symlink?(lock_root)
     FileUtils.mkdir_p(lock_root, mode: 0o700)
-    File.open(lock_root.join("#{reply.id}.lock"), File::RDWR | File::CREAT, 0o600) do |lock|
+    File.open(lock_root.join("#{message_id}.lock"), File::RDWR | File::CREAT | File::NOFOLLOW, 0o600) do |lock|
+      raise "Unsafe reply lock file" unless lock.stat.file? && lock.stat.nlink == 1
       return unless lock.flock(File::LOCK_EX | File::LOCK_NB)
       reply.reload
       return unless reply.status == "pending"

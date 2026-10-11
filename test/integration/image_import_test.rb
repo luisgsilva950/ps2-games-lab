@@ -54,4 +54,19 @@ class ImageImportTest < ActionDispatch::IntegrationTest
     assert_equal "existing original", File.binread(image.managed_path)
    end
  end
+
+ test "upload refuses a symlinked storage parent without writing outside the lab" do
+   outside = @root.join("outside")
+   FileUtils.mkdir_p(outside)
+   sentinel = outside.join("keep.txt")
+   File.binwrite(sentinel, "preserve outside data")
+   File.symlink(outside, @root.join("alias"))
+   GameImage.stub(:storage_root, @root.join("alias", "managed")) do
+     perform_enqueued_jobs { post game_images_path, params: { image: Rack::Test::UploadedFile.new(@source) } }
+     assert_response :unprocessable_entity
+     assert_equal "failed", GameImage.order(:id).last.status
+     assert_not File.exist?(outside.join("managed"))
+     assert_equal "preserve outside data", File.binread(sentinel)
+   end
+ end
 end
