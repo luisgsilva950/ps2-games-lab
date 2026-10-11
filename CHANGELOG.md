@@ -6,4 +6,7 @@
 - Added persistent OpenAI-compatible chat with streamed replies and SSE/EventSource progress; disabled Action Cable and removed Solid Cable.
 - Added configured PCSX2 desktop launcher, isolated emulator profile, original-integrity checks, and explicit setup/launch statuses.
 - Added integration coverage, CI test execution, AI specialist/task harness, and screenshots of the running synthetic-fixture workflow.
-- Binary inspection, patch approval, modified-image builds, and actual PCSX2 gameplay verification are not part of this release.
+- Added automatic development/test loading from Git-ignored `.env`, with `.env.example` setup instructions.
+- Fixed PCSX2 2.8.2 custom data-directory layout so the emulator reads the generated BIOS configuration.
+- Verified a real local Midnight Club 3: DUB Edition Remix import, preserved source/copy hashes, BIOS loading, Metal initialization, and game ELF execution. Visual gameplay and controller input remain unverified.
+- Binary inspection, patch approval, and modified-image builds are not part of this release.

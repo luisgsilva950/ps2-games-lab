@@ -57,3 +57,5 @@ end
 gem "ruby_llm", "~> 1.16"
 
 gem "minitest", "~> 5.27", group: :test
+
+gem "dotenv-rails", "~> 3.2", groups: [ :development, :test ]

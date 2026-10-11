@@ -75,10 +75,11 @@ class EmulatorLauncher
 
   def prepare_configuration(bios)
     # Isolate saves and configuration from the user's normal PCSX2 installation.
-    # These keys are read by PCSX2 Qt's Pcsx2Config.cpp and QtHost.cpp.
+    # PCSX2 2.8.2 appends "PCSX2" to the custom -datapath on all platforms.
     data_root = Rails.root.join("storage", "pcsx2", Digest::SHA256.hexdigest(bios))
-    settings = data_root.join("inis")
-    [ Rails.root.join("storage"), data_root.parent, data_root, settings ].each do |directory|
+    profile = data_root.join("PCSX2")
+    settings = profile.join("inis")
+    [ Rails.root.join("storage"), data_root.parent, data_root, profile, settings ].each do |directory|
       raise ConfigurationError, "The managed PCSX2 configuration directory contains an unsafe symbolic link." if File.symlink?(directory)
     end
     FileUtils.mkdir_p(settings, mode: 0o700)

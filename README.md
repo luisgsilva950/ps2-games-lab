@@ -8,7 +8,7 @@ A local Rails workspace for importing PS2 disc images, chatting about modificati
 
 ## Screenshots
 
-These screenshots were captured from the running Rails app using small synthetic ISO9660 fixtures and a deterministic local OpenAI-compatible streaming fixture. They show real import, persistence, and UI behavior—not real model reasoning, a bootable PS2 game, or verified PCSX2 playback. No game or BIOS files are in this repository.
+The library screenshot shows the running Rails app after importing the real local Midnight Club ISO. The chat screenshot uses small synthetic ISO9660 fixtures and a deterministic local OpenAI-compatible streaming fixture. These are actual application captures, not mockups; neither is a screenshot of PCSX2 gameplay. No game or BIOS files are in this repository.
 
 ### Import and library
 
@@ -26,6 +26,7 @@ Requirements: Ruby **3.4.2** (see .ruby-version), Bundler, and enough free disk 
 git clone git@github.com:luisgsilva950/ps2-games-lab.git
 cd ps2-games-lab
 bin/setup --skip-server
+cp .env.example .env
 bin/dev
 ~~~
 
@@ -35,19 +36,17 @@ Only run this application locally. There is no user authentication or hardened p
 
 ## Configure chat
 
-Export configuration in the same terminal before starting bin/dev:
+Copy .env.example to .env and edit the local file before starting bin/dev:
 
-~~~sh
-export OPENAI_API_BASE="https://api.openai.com/v1"
-export OPENAI_MODEL="your-provider-model-id"
-read -s OPENAI_API_KEY
-export OPENAI_API_KEY
-bin/dev
+~~~dotenv
+OPENAI_API_BASE=https://api.openai.com/v1
+OPENAI_MODEL=your-provider-model-id
+OPENAI_API_KEY=your-private-api-key
 ~~~
 
-On macOS shells, read -s accepts the key without echoing it; finish entry with Enter. Use your provider's exact model ID. For another OpenAI-compatible server, change OPENAI_API_BASE to its API base URL, typically ending in /v1. It must support streaming chat completions. Local servers may use a nonempty placeholder key if they do not require authentication.
+Use your provider's exact model ID. For another OpenAI-compatible server, change OPENAI_API_BASE to its API base URL, typically ending in /v1. It must support streaming chat completions. Local servers may use a nonempty placeholder key if they do not require authentication.
 
-.env.example documents the variables; **.env files are not automatically loaded**. Restart both Rails and the worker after configuration changes. Do not commit credentials or paste them into chat.
+dotenv-rails automatically loads .env in development and test; existing shell environment variables take precedence. The file is ignored by Git. Restart both Rails and the worker after changes. Do not commit credentials or paste them into chat. Production configuration uses the process environment.
 
 The endpoint receives the conversation and image metadata: name, size, SHA-256, and import status. **ISO contents are not transmitted.** Endpoint configuration is local environment configuration, not model-controlled input. Provider requests can incur charges.
 
@@ -75,17 +74,18 @@ Allow up to **three times the image size in additional temporary space during up
 
 Install PCSX2 from [its official download page](https://pcsx2.net/downloads/) and supply a BIOS you have the right to use. Nothing proprietary is bundled or downloaded automatically.
 
-~~~sh
-export PCSX2_EXECUTABLE="/Applications/PCSX2.app/Contents/MacOS/PCSX2"
-export PCSX2_BIOS_PATH="/absolute/path/to/your/ps2-bios.bin"
-bin/dev
+Add these settings to your ignored `.env`, then restart `bin/dev`:
+
+~~~dotenv
+PCSX2_EXECUTABLE="/Applications/PCSX2.app/Contents/MacOS/PCSX2"
+PCSX2_BIOS_PATH="/absolute/path/to/your/ps2-bios.bin"
 ~~~
 
 The executable name/location above is illustrative: use the actual executable inside your installed .app, **not the .app directory**. PCSX2_BIOS_PATH can be a readable BIOS file or a directory; directory mode picks the first sorted readable .bin/.rom file. Prefer an explicit main BIOS file so auxiliary ROM files are not selected by mistake. PCSX2 is responsible for validating the firmware.
 
 The launcher uses the [documented PCSX2 Qt CLI](https://pcsx2.net/docs/advanced/cli) with a fixed argument array: -datapath, -batch, --, and the managed ISO. It never constructs a shell command from a prompt or filename. It verifies image size/hash and refuses symlink/hardlink originals before launching.
 
-Settings and saves are isolated under storage/pcsx2/<digest-of-resolved-BIOS-path>/, separate from your normal PCSX2 profile. Initial inis/PCSX2.ini selects the supplied BIOS; existing settings are preserved. Configure your DualSense/controller within this lab-specific emulator profile. Existing emulator sessions are not killed automatically.
+Settings and saves are isolated under storage/pcsx2/<digest-of-resolved-BIOS-path>/PCSX2/, separate from your normal PCSX2 profile. PCSX2 2.8.2 appends `PCSX2` to the supplied `-datapath`; the launcher creates `PCSX2/inis/PCSX2.ini` there to select the supplied BIOS. Existing settings are preserved. Configure your DualSense/controller within this lab-specific emulator profile. Existing emulator sessions are not killed automatically.
 
 **Launched means a process was started—not that a window rendered, the BIOS loaded, or the game booted.** An emulator that exits after startup may still have this status. Verify actual playback in the desktop window. A browser cannot embed or directly launch PCSX2; the local Rails backend starts it on the same machine.
 
@@ -124,7 +124,12 @@ Observed verification for this release:
 - Browser observed partial SSE content before completion; an unsent draft survived completion.
 - Desktop and 390px-wide UI checked; no horizontal overflow at 390px.
 - Zeitwerk loading and Ruby style checks passed.
-- Launcher started a real /usr/bin/true process surrogate and preserved the original hash. **Actual PCSX2 boot/gameplay has not been verified.**
+- Local macOS smoke imported an 8,539,963,392-byte Midnight Club 3: DUB Edition Remix ISO through the browser and Solid Queue. Source and read-only managed copy retained matching SHA-256 hashes.
+- Official PCSX2 2.8.2 archive matched its published SHA-256. The actual launcher loaded the supplied BIOS, identified disc serial `SLUS-21355` / CRC `60A42FF5`, initialized Metal, and logged the game ELF executing.
+- Visual gameplay and DualSense input remain unverified: this automation process lacked macOS Screen Recording and Accessibility permissions, and hardware discovery found no matching connected PlayStation controller. No permission bypass was attempted. BIOS/game files, emulator settings, and local `.env` stay Git-ignored.
+- Rails loaded emulator/BIOS settings from the ignored `.env` without shell exports.
+
+For the remaining hands-on check, connect your DualSense over USB or Bluetooth, open the running PCSX2 window, and use Settings → Controllers → Controller Port 1 → Automatic Mapping. Choose the detected controller, then confirm menus, steering, and acceleration in a race. Desktop automation requires macOS permissions granted by the user; those permissions are not required to play manually.
 
 Brakeman currently reports seven file-access warnings for model-derived managed image paths and the numeric reply-lock filename. Those paths use generated/validated identifiers rather than user-supplied filesystem paths; the warnings remain visible and are not suppressed. The Brakeman security CI job currently fails on them. A clean static-analysis result is not claimed. RubyLLM 1.16 also emits an upstream legacy Active Record API deprecation at boot; this app uses its context/chat API, not the legacy acts_as API.
 
