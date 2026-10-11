@@ -148,7 +148,9 @@ GEM
       net-smtp
     marcel (1.2.1)
     mini_mime (1.1.5)
-    minitest (5.27.0)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
     msgpack (1.8.5)
     multipart-post (2.4.1)
     net-http (0.10.0)
@@ -368,7 +370,7 @@ DEPENDENCIES
   dotenv-rails (~> 3.2)
   importmap-rails
   jbuilder
-  minitest (~> 5.27)
+  minitest (~> 6.0)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.4)
@@ -436,7 +438,7 @@ CHECKSUMS
   mail (2.9.1) sha256=06574eca475253d6c18145dd70af80d0eb970182d55053497c5f4d797ea160e8
   marcel (1.2.1) sha256=1678e9360e32f9eafa917c80029e2f6d10b2715c66a4b87b6d0da9b9cd1f859f
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
-  minitest (5.27.0) sha256=2d3b17f8a36fe7801c1adcffdbc38233b938eb0b4966e97a6739055a45fa77d5
+  minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   msgpack (1.8.5) sha256=97419eaa7b35dfe3e462c0e6c1a3dfdcbfc8756605c09e46e4c6daef127517ba
   multipart-post (2.4.1) sha256=9872d03a8e552020ca096adadbf5e3cb1cd1cdd6acd3c161136b8a5737cdb4a8
   net-http (0.10.0) sha256=1a2ff6e37a05724973c43f2bf7bf105f59c36a4cd0a7e9b1c021a0a566987c27
