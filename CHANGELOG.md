@@ -12,4 +12,5 @@
 - Fixed security CI file-access findings without ignores or disabled checks: moved image IO into the validated model boundary, enforced canonical UUIDs/fixed filenames, and rejected storage-parent and reply-lock links.
 - Added failing-before/passing-after security regressions and verified browser import plus partial/completed SSE chat through the real worker; all local CI commands pass.
 - Fixed the newly exposed gem-audit failure by upgrading RubyLLM from 1.16 to patched 2.0, preserving Chat Completions compatibility explicitly, and refreshing advisory data in GitHub CI and bin/ci. CVE-2026-67987 is fixed rather than ignored. Verified the upgraded SDK with the integration suite and browser partial/completed SSE replies through the real worker and a local HTTP model fixture.
+- Upgraded RubyLLM to the requested 2.1.0 release. Verified all 14 integration tests (90 assertions), security scans, and an actual chat job consuming a streamed local HTTP response. The one-time Bundler cooldown override does not change the user’s global configuration.
 - Binary inspection, patch approval, and modified-image builds are not part of this release.
