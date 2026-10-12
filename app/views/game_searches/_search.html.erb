@@ -8,7 +8,10 @@
       </div>
       <%= form.submit "Search CoolROM", class: "button button-secondary" %>
     <% end %>
-    <p id="search-disclosure" class="fine-print">Your search title is sent to CoolROM. Results open its website in a new tab; the lab does not download games. Only obtain images you are authorized to download. Avoid executable downloaders; extract an ISO yourself, then use the library’s <%= link_to "Import ISO", "#{root_path}#import-heading", data: { turbo_frame: "_top" } %> panel.</p>
+    <details class="search-privacy">
+      <summary>Search privacy &amp; downloads</summary>
+      <p id="search-disclosure" class="fine-print">Your search title is sent to CoolROM. Results open its website in a new tab; the lab does not download games. Only obtain images you are authorized to download. Avoid executable downloaders; extract an ISO yourself, then use the library’s <%= link_to "Import a game", "#{root_path}#import-heading", data: { turbo_frame: "_top" } %> panel.</p>
+    </details>
     <% if error %>
       <p class="error-text search-feedback" role="alert"><%= error %></p>
     <% elsif results %>

@@ -8,9 +8,9 @@ A local Rails workspace for importing PS2 disc images, tuning per-game PCSX2 pla
 
 ## Interface
 
-The PlayStation-inspired landing page uses a shared heading and a proportional desktop grid: the library occupies about five-eighths of the content width, with compact search/import panels stacked beside it. Game artwork has bounded height, tiles adapt to the available library width, and configuration/controller guides sit in a separate supporting row. Tablet layouts put search and import beneath the library; mobile stacks all panels. Each game opens a dedicated hub with a prominent launch action, per-game settings, and optional expandable AI.
+The landing page takes structural inspiration from the [PlayStation Plus game catalog](https://www.playstation.com/en-us/ps-plus/games/): a compact light/yellow hero, a balanced search/import action row, then a full-width library of consistent square-art cards. A single game keeps its catalog-sized tile instead of stretching across the page. Mobile uses two compact card columns while forms stack. Expanded search results do not stretch the import panel. The dedicated game hub retains playback, tuning, and optional AI controls.
 
-The interface uses a dark navy canvas, electric-blue actions, soft blue lighting, rounded panels, and large sans-serif headings. Disc tiles use original abstract artwork rather than downloaded covers or official logos. This is an independent local lab, not an official PlayStation interface. Controls stack on narrow screens; keyboard focus stays visible and reduced-motion preferences are respected. Pages use normal document scrolling. Existing SSE delivery, composer drafts, provider/model selection, and tuning persistence are unchanged.
+The landing hero contrasts light gray and yellow with the lab's navy canvas and blue actions. Decorative hero panels and disc artwork are original abstract CSS, not official logos or downloaded game covers. This is an independent local lab, not an official PlayStation interface. Keyboard focus stays visible and reduced-motion preferences are respected. Pages use normal document scrolling. Existing SSE delivery, composer drafts, provider/model selection, and tuning persistence are unchanged.
 
 ## Screenshots
 
@@ -18,7 +18,7 @@ These running-application captures show the console-style library and the game h
 
 ### Import and library
 
-![Proportional console library with compact stacked search and import panels](docs/images/library.png)
+![PlayStation Plus-inspired landing hero, balanced search/import actions, and compact game catalog](docs/images/library.png)
 
 ### Game hub and settings
 

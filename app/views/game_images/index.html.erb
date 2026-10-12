@@ -1,17 +1,47 @@
 <% content_for :title, "Library · PS2 Games Lab" %>
 <div class="library-layout">
-  <div class="library-hero">
-    <p class="eyebrow">Your local console</p>
-    <div class="section-bar">
-      <h1 id="library-heading">Library</h1>
+  <section class="library-hero" aria-labelledby="landing-heading">
+    <div class="hero-copy">
+      <p class="eyebrow">PS2 Games Lab · Local collection</p>
+      <h1 id="landing-heading">Your next great game.</h1>
+      <p class="section-description">Find a title, import your disc, and tune your playback.</p>
+      <%= link_to "Browse your library", "#library-heading", class: "button catalog-button", data: { turbo: false } %>
+    </div>
+    <div class="hero-art" aria-hidden="true"><span></span><span></span><span></span></div>
+  </section>
+
+  <div class="library-tools">
+    <%= render "game_searches/search", query: nil, results: nil, error: nil %>
+    <section class="panel import-panel" aria-labelledby="import-heading">
+      <h2 id="import-heading">Import a game</h2>
+      <%= form_with url: game_images_path, multipart: true, data: { controller: "upload", action: "submit->upload#submit", turbo: false } do |form| %>
+        <div class="drop-zone" data-upload-target="zone" data-action="dragover->upload#dragover dragleave->upload#dragleave drop->upload#drop">
+          <div class="drop-copy">
+            <p class="drop-title">Drop your ISO</p>
+            <%= form.label :image, "Or choose an ISO file", class: "file-label" %>
+          </div>
+          <%= form.file_field :image, accept: ".iso", required: true, class: "file-input", data: { upload_target: "input", action: "change->upload#selected" } %>
+          <p class="file-name" data-upload-target="filename">One .iso image at a time</p>
+        </div>
+        <div class="upload-progress" data-upload-target="progressContainer" hidden>
+          <label for="upload-progress">Uploading to local storage</label>
+          <progress id="upload-progress" max="100" value="0" data-upload-target="progress"></progress>
+        </div>
+        <p class="upload-feedback" data-upload-target="feedback" role="status" aria-live="polite"></p>
+        <%= form.submit "Import game", class: "button button-primary", data: { upload_target: "submit" } %>
+      <% end %>
+      <p class="fine-print">Only import images you have the right to use. Originals stay private and unchanged.</p>
+    </section>
+  </div>
+
+  <section class="library-section" aria-labelledby="library-heading">
+    <div class="section-bar catalog-heading">
+      <h2 id="library-heading">Your library</h2>
       <span class="muted"><%= pluralize(@game_images.size, "image") %></span>
     </div>
-    <p class="section-description">Your games. Your settings. Ready when you are.</p>
-  </div>
-  <section class="library-section" aria-labelledby="library-heading">
     <% if @game_images.empty? %>
       <div class="empty-state">
-        <h2>No images imported</h2>
+        <h3>No images imported</h3>
         <p>Import an ISO to open its workspace. AI and playback setup can wait.</p>
       </div>
     <% else %>
@@ -20,7 +50,7 @@
           <article class="game-row">
             <div class="game-art" aria-hidden="true"><strong>PS2</strong><span>LOCAL DISC</span></div>
             <div class="game-summary">
-              <h2><%= link_to game.name, game_image_path(game) %></h2>
+              <h3><%= link_to game.name, game_image_path(game) %></h3>
               <p><%= game.byte_size.present? ? number_to_human_size(game.byte_size) : "Size pending" %> · Imported <%= l(game.created_at, format: :short) %></p>
               <% if game.error.present? %><p class="error-text"><%= game.error %></p><% end %>
             </div>
@@ -31,42 +61,22 @@
       </div>
     <% end %>
   </section>
-  <div class="library-tools">
-    <%= render "game_searches/search", query: nil, results: nil, error: nil %>
-    <section class="panel import-panel" aria-labelledby="import-heading">
-      <h2 id="import-heading">Import ISO</h2>
-      <%= form_with url: game_images_path, multipart: true, data: { controller: "upload", action: "submit->upload#submit", turbo: false } do |form| %>
-        <div class="drop-zone" data-upload-target="zone" data-action="dragover->upload#dragover dragleave->upload#dragleave drop->upload#drop">
-          <p class="drop-title">Drop an ISO here</p>
-          <%= form.label :image, "Or choose an ISO file", class: "file-label" %>
-          <%= form.file_field :image, accept: ".iso", required: true, class: "file-input", data: { upload_target: "input", action: "change->upload#selected" } %>
-          <p class="file-name" data-upload-target="filename">One .iso image at a time</p>
-        </div>
-        <div class="upload-progress" data-upload-target="progressContainer" hidden>
-          <label for="upload-progress">Uploading to local storage</label>
-          <progress id="upload-progress" max="100" value="0" data-upload-target="progress"></progress>
-        </div>
-        <p class="upload-feedback" data-upload-target="feedback" role="status" aria-live="polite"></p>
-        <%= form.submit "Import game", class: "button button-primary button-full", data: { upload_target: "submit" } %>
-      <% end %>
-      <p class="fine-print">Only import images you have the right to use. Originals are stored privately and never modified.</p>
-    </section>
-  </div>
+
   <div class="library-support">
     <details class="panel setup-panel">
       <summary id="setup-heading">Configuration &amp; requirements</summary>
       <div class="setup-instructions">
-      <p>Import works without AI or emulator setup. Set environment variables, then restart Rails.</p>
-      <ul class="setup-list">
-        <% ChatProvider::LABELS.each do |provider, label| %>
-          <% configured = ChatProvider.configured?(provider) %>
-          <li><span><%= label %> chat<%= " · default" if provider == ChatProvider.default %></span><strong class="<%= configured ? "configured" : "muted" %>"><%= configured ? "Configured" : "Not configured" %></strong></li>
-        <% end %>
-        <li><span>PCSX2 executable</span><strong><%= ENV["PCSX2_EXECUTABLE"].present? ? "Configured" : "Not configured" %></strong></li>
-        <li><span>Your BIOS</span><strong><%= ENV["PCSX2_BIOS_PATH"].present? ? "Configured" : "Not configured" %></strong></li>
-      </ul>
-      <p class="fine-print">Choose the vendor and model in each conversation. Set <code>CHAT_PROVIDER=gemini</code> and <code>GEMINI_API_KEY</code> for Gemini; <code>GEMINI_MODEL</code> defaults to <code>gemini-2.5-flash</code>. OpenAI / compatible uses <code>OPENAI_API_KEY</code>, <code>OPENAI_MODEL</code>, and optionally <code>OPENAI_API_BASE</code>. Keys stay on the server. Restart Rails and the worker after configuration changes.</p>
-      <p class="fine-print">Playback needs <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code>. No emulator, BIOS, or games are bundled. Configuration presence does not verify playback.</p>
+        <p>Import works without AI or emulator setup. Set environment variables, then restart Rails.</p>
+        <ul class="setup-list">
+          <% ChatProvider::LABELS.each do |provider, label| %>
+            <% configured = ChatProvider.configured?(provider) %>
+            <li><span><%= label %> chat<%= " · default" if provider == ChatProvider.default %></span><strong class="<%= configured ? "configured" : "muted" %>"><%= configured ? "Configured" : "Not configured" %></strong></li>
+          <% end %>
+          <li><span>PCSX2 executable</span><strong><%= ENV["PCSX2_EXECUTABLE"].present? ? "Configured" : "Not configured" %></strong></li>
+          <li><span>Your BIOS</span><strong><%= ENV["PCSX2_BIOS_PATH"].present? ? "Configured" : "Not configured" %></strong></li>
+        </ul>
+        <p class="fine-print">Choose the vendor and model in each conversation. Set <code>CHAT_PROVIDER=gemini</code> and <code>GEMINI_API_KEY</code> for Gemini; <code>GEMINI_MODEL</code> defaults to <code>gemini-2.5-flash</code>. OpenAI / compatible uses <code>OPENAI_API_KEY</code>, <code>OPENAI_MODEL</code>, and optionally <code>OPENAI_API_BASE</code>. Keys stay on the server. Restart Rails and the worker after configuration changes.</p>
+        <p class="fine-print">Playback needs <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code>. No emulator, BIOS, or games are bundled. Configuration presence does not verify playback.</p>
       </div>
     </details>
     <%= render "dualsense_setup" %>
