@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_020000) do
   create_table "game_images", force: :cascade do |t|
     t.string "name", null: false
     t.string "storage_key", null: false
@@ -33,6 +33,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_010000) do
     t.text "error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "provider"
+    t.string "model_id"
     t.index ["game_image_id"], name: "index_messages_on_game_image_id"
   end
 

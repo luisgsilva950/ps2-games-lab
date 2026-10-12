@@ -1,10 +1,14 @@
 <% content_for :title, "#{@game_image.name} · PS2 Games Lab" %>
 <% messages = @game_image.messages.order(:created_at, :id).to_a %>
 <% streaming = %w[pending importing].include?(@game_image.status) || @game_image.launch_status == "launching" || messages.any? { |message| message.status == "pending" } %>
-<% chat_configured = ENV["OPENAI_API_KEY"].present? && ENV["OPENAI_MODEL"].present? %>
+<% last_reply = messages.reverse.find { |message| message.role == "assistant" && message.provider.present? && message.model_id.present? } %>
+<% selected_provider = last_reply&.provider || ChatProvider.default %>
+<% selected_model = last_reply&.model_id || ChatProvider.default_model(selected_provider) %>
+<% provider_models = ChatProvider::LABELS.keys.index_with { |provider| ChatProvider.default_model(provider) } %>
+<% provider_notices = ChatProvider::LABELS.keys.index_with { |provider| ChatProvider.configuration_error(provider: provider, model: "configured-model") } %>
 <% launch_configured = ENV["PCSX2_EXECUTABLE"].present? && ENV["PCSX2_BIOS_PATH"].present? %>
 <% reply_pending = messages.any? { |message| message.status == "pending" } %>
-<div data-controller="refresh" data-refresh-active-value="<%= streaming %>" data-refresh-url-value="<%= events_game_image_path(@game_image) %>">
+<div data-controller="refresh provider" data-refresh-active-value="<%= streaming %>" data-refresh-url-value="<%= events_game_image_path(@game_image) %>" data-provider-models-value="<%= provider_models.to_json %>" data-provider-notices-value="<%= provider_notices.to_json %>" data-action="provider:restore->provider#restore turbo:load@document->refresh#restoreScroll">
   <%= link_to "← Library", root_path, class: "text-link back-link" %>
   <section class="page-heading game-heading" aria-labelledby="game-heading">
     <h1 id="game-heading"><%= @game_image.name %></h1>
@@ -33,19 +37,27 @@
         <h2 id="conversation-heading">Conversation</h2>
         <span class="muted">AI assistant</span>
       </div>
-      <p class="conversation-disclosure">Messages and image metadata (name, size, hash) are sent to your configured model endpoint. ISO bytes are not sent. Chat does not modify your image.</p>
+      <p class="conversation-disclosure">Your next message, prior completed conversation history, and image metadata (name, size, hash) go to <strong data-provider-target="label"><%= ChatProvider::LABELS[selected_provider] || "the selected provider" %></strong>. Switching vendors transfers that history to the newly selected vendor. ISO bytes are not sent. Chat does not modify your image.</p>
       <div class="messages" data-refresh-target="messages" aria-live="polite" aria-relevant="additions text">
         <%= render "messages", messages: messages %>
       </div>
-      <% unless chat_configured %>
-        <div class="notice">To enable chat, set <code>OPENAI_API_KEY</code> and <code>OPENAI_MODEL</code>, then restart Rails. <code>OPENAI_API_BASE</code> is optional.</div>
-      <% end %>
-      <%= form_with url: game_image_messages_path(@game_image), data: { turbo: false, action: "submit->refresh#clearDraft" }, class: "chat-form" do |form| %>
+      <%= form_with url: game_image_messages_path(@game_image), data: { action: "submit->refresh#prepareSubmission" }, class: "chat-form" do |form| %>
+        <div class="provider-fields">
+          <div>
+            <%= form.label :provider, "AI provider" %>
+            <%= form.select :provider, ChatProvider::LABELS.map { |provider, label| [label, provider] }, { selected: selected_provider }, required: true, aria: { describedby: "provider-notice" }, data: { provider_target: "provider", refresh_target: "provider", action: "change->provider#change" } %>
+          </div>
+          <div>
+            <%= form.label :model, "Model ID" %>
+            <%= form.text_field :model, value: selected_model, required: true, maxlength: 200, placeholder: "Exact provider model ID", data: { provider_target: "model", refresh_target: "model" } %>
+          </div>
+        </div>
+        <p id="provider-notice" class="notice provider-notice" data-provider-target="notice" role="status" aria-live="polite" <%= "hidden" if provider_notices[selected_provider].blank? %>><%= provider_notices[selected_provider] %></p>
         <%= form.label :content, "Your message" %>
-        <%= form.text_area :content, rows: 4, required: true, maxlength: 4000, placeholder: "Ask about this game or PCSX2…", disabled: !chat_configured || !@game_image.ready?, data: { refresh_target: "draft" } %>
+        <%= form.text_area :content, rows: 4, required: true, maxlength: 4000, placeholder: "Ask about this game or PCSX2…", data: { refresh_target: "draft" } %>
         <div class="composer-footer">
           <span class="fine-print"><%= @game_image.ready? ? "AI answers may be inaccurate. Verify important advice." : "Chat is available after a successful import." %></span>
-          <%= form.submit "Send message", class: "button button-primary", disabled: !chat_configured || !@game_image.ready? || reply_pending %>
+          <%= form.submit "Send message", class: "button button-primary", disabled: !@game_image.ready? || reply_pending %>
         </div>
       <% end %>
     </section>

@@ -2,6 +2,7 @@
 <% messages.each do |message| %>
   <article class="message message-<%= message.role %>">
     <div class="message-heading"><strong><%= message.role == "user" ? "You" : "Assistant" %></strong><span class="muted"><%= message.status.humanize %></span></div>
+    <% if message.role == "assistant" && message.provider.present? %><p class="message-model muted"><%= ChatProvider::LABELS[message.provider] || message.provider %> · <%= message.model_id %></p><% end %>
     <% if message.content.present? %><div class="message-content"><%= message.content %></div><% end %>
     <% if message.status == "pending" %><p class="muted"><%= message.content.present? ? "Receiving response…" : "Waiting for the model response…" %></p><% end %>
     <% if message.status == "failed" %><p class="error-text">Response failed. <%= message.error %></p><% end %>

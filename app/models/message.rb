@@ -1,5 +1,3 @@
-require "uri"
-
 class Message < ApplicationRecord
   MAX_CONTENT_LENGTH = 4_000
   MAX_REPLY_LENGTH = 8_000
@@ -14,26 +12,24 @@ class Message < ApplicationRecord
   validates :content, presence: true, if: -> { status == "complete" }
   validates :content, length: { maximum: MAX_CONTENT_LENGTH }, if: -> { role == "user" }
   validates :content, length: { maximum: MAX_REPLY_LENGTH }, if: -> { role == "assistant" }
+  validates :provider, inclusion: { in: ChatProvider::LABELS.keys }, if: -> { role == "assistant" && status == "pending" }
+  validates :model_id, format: { with: /\A[a-zA-Z0-9][a-zA-Z0-9._:\/-]{0,199}\z/ }, if: -> { role == "assistant" && status == "pending" }
 
   scope :complete, -> { where(status: "complete") }
   scope :pending, -> { where(status: "pending") }
 
-  def self.configuration_error
-    missing = %w[OPENAI_API_KEY OPENAI_MODEL].select { |key| ENV[key].blank? }
-    return "Chat is not configured. Set #{missing.join(' and ')} and restart Rails." if missing.any?
-
-    uri = URI.parse(ENV.fetch("OPENAI_API_BASE", "https://api.openai.com/v1"))
-    unless %w[http https].include?(uri.scheme) && uri.host.present? && uri.userinfo.nil? && uri.query.nil? && uri.fragment.nil?
-      "OPENAI_API_BASE must be an HTTP(S) API base URL without credentials, query, or fragment."
+  def self.submit!(game_image:, content:, provider: nil, model: nil)
+    provider = ChatProvider.default if provider.nil?
+    unless provider.is_a?(String) && ChatProvider::LABELS.key?(provider)
+      raise SubmissionError, "Choose a supported chat provider: OpenAI or Gemini."
     end
-  rescue URI::InvalidURIError
-    "OPENAI_API_BASE must be a valid HTTP(S) API base URL."
-  end
-
-  def self.submit!(game_image:, content:)
-    setup_error = configuration_error
+    model = ChatProvider.default_model(provider) if model.nil?
+    raise SubmissionError, "Enter a model ID for the selected provider." unless model.is_a?(String)
+    model = model.strip
+    setup_error = ChatProvider.configuration_error(provider: provider, model: model)
     raise SubmissionError, setup_error if setup_error
-    text = content.to_s.strip
+    raise SubmissionError, "Enter a message." unless content.is_a?(String)
+    text = content.strip
     raise SubmissionError, "Enter a message." if text.blank?
     raise SubmissionError, "Messages must be #{MAX_CONTENT_LENGTH} characters or fewer." if text.length > MAX_CONTENT_LENGTH
 
@@ -48,7 +44,7 @@ class Message < ApplicationRecord
       end
 
       game_image.messages.create!(role: "user", content: text, status: "complete")
-      reply = game_image.messages.create!(role: "assistant", content: "", status: "pending")
+      reply = game_image.messages.create!(role: "assistant", content: "", status: "pending", provider: provider, model_id: model)
     end
 
     begin

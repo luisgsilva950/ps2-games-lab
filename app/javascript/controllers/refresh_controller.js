@@ -1,23 +1,34 @@
 import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
+const draftSnapshots = new Map()
+
 export default class extends Controller {
   static values = { active: Boolean, url: String }
-  static targets = ["draft", "messages"]
+  static targets = ["draft", "messages", "provider", "model"]
 
   connect() {
     this.storageKey = `ps2-chat-draft:${window.location.pathname}`
+    this.savedScroll = undefined
+    let saved = draftSnapshots.get(this.storageKey)
+    draftSnapshots.delete(this.storageKey)
     try {
-      const saved = JSON.parse(sessionStorage.getItem(this.storageKey) || "null")
-      if (saved && this.hasDraftTarget) {
-        this.draftTarget.value = saved.content
-        if (saved.focused && !this.draftTarget.disabled) {
-          this.draftTarget.focus({ preventScroll: true })
-          this.draftTarget.setSelectionRange(saved.start, saved.end)
-        }
-        window.scrollTo(0, saved.scroll)
+      saved ||= JSON.parse(sessionStorage.getItem(this.storageKey) || "null")
+      sessionStorage.removeItem(this.storageKey)
+    } catch { /* In-memory snapshots also preserve drafts without storage access. */ }
+    if (saved && this.hasDraftTarget) {
+      this.draftTarget.value = saved.content
+      if (this.hasProviderTarget && saved.provider) this.providerTarget.value = saved.provider
+      if (this.hasModelTarget && saved.model !== undefined) this.modelTarget.value = saved.model
+      this.element.dispatchEvent(new CustomEvent("provider:restore"))
+      const focused = saved.focusedTarget && this[`${saved.focusedTarget}Target`]
+      if (focused && !focused.disabled) {
+        focused.focus({ preventScroll: true })
+        if (saved.start != null && focused.setSelectionRange) focused.setSelectionRange(saved.start, saved.end)
       }
-    } catch { /* Draft storage is optional. */ }
+      this.savedScroll = saved.scroll
+      requestAnimationFrame(() => this.restoreScroll())
+    }
     if (this.activeValue) {
       this.events = new EventSource(this.urlValue)
       this.events.addEventListener("update", (event) => {
@@ -33,27 +44,35 @@ export default class extends Controller {
 
   disconnect() { this.events?.close() }
 
+  restoreScroll() {
+    if (this.savedScroll !== undefined) window.scrollTo(0, this.savedScroll)
+  }
+
   refresh() {
-    try {
-      sessionStorage.setItem(this.storageKey, JSON.stringify({
-        content: this.hasDraftTarget ? this.draftTarget.value : "",
-        focused: this.hasDraftTarget && document.activeElement === this.draftTarget,
-        start: this.hasDraftTarget ? this.draftTarget.selectionStart : 0,
-        end: this.hasDraftTarget ? this.draftTarget.selectionEnd : 0,
-        scroll: window.scrollY
-      }))
-    } catch {
-      // Keep an unsent draft when storage is unavailable; still enable sending after completion.
-      if (this.hasDraftTarget && this.draftTarget.value) {
-        this.element.querySelector('input[type="submit"]').disabled = false
-        return
-      }
-    }
+    const focusedTarget = ["draft", "provider", "model"].find((name) =>
+      this[`has${name[0].toUpperCase()}${name.slice(1)}Target`] && document.activeElement === this[`${name}Target`]
+    )
+    this.rememberComposer(this.hasDraftTarget ? this.draftTarget.value : "", focusedTarget)
     Turbo.visit(window.location.href, { action: "replace" })
   }
 
-  clearDraft() {
+  prepareSubmission() {
     this.events?.close()
-    try { sessionStorage.removeItem(this.storageKey) } catch { /* No stored draft. */ }
+    this.rememberComposer("", "draft")
+  }
+
+  rememberComposer(content, focusedTarget) {
+    const focused = focusedTarget && this[`${focusedTarget}Target`]
+    const saved = {
+      content,
+      provider: this.hasProviderTarget ? this.providerTarget.value : undefined,
+      model: this.hasModelTarget ? this.modelTarget.value : undefined,
+      focusedTarget,
+      start: focused?.selectionStart,
+      end: focused?.selectionEnd,
+      scroll: window.scrollY
+    }
+    draftSnapshots.set(this.storageKey, saved)
+    try { sessionStorage.setItem(this.storageKey, JSON.stringify(saved)) } catch { /* Use the in-memory snapshot. */ }
   }
 }

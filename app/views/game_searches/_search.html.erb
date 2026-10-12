@@ -1,0 +1,25 @@
+<%= turbo_frame_tag "game-search" do %>
+  <section class="panel search-panel" aria-labelledby="search-heading">
+    <h2 id="search-heading">Find a game on CoolROM</h2>
+    <%= form_with url: game_search_path, method: :get, class: "game-search-form" do |form| %>
+      <div class="search-field">
+        <%= form.label :q, "PS2 game title" %>
+        <%= form.search_field :q, value: query, required: true, maxlength: 100, placeholder: "e.g. Midnight Club", aria: { describedby: "search-disclosure" } %>
+      </div>
+      <%= form.submit "Search CoolROM", class: "button button-secondary" %>
+    <% end %>
+    <p id="search-disclosure" class="fine-print">Your search title is sent to CoolROM. Results open its website in a new tab; the lab does not download games. Only obtain images you are authorized to download. Avoid executable downloaders; extract an ISO yourself, then use the library’s <%= link_to "Import ISO", "#{root_path}#import-heading", data: { turbo_frame: "_top" } %> panel.</p>
+    <% if error %>
+      <p class="error-text search-feedback" role="alert"><%= error %></p>
+    <% elsif results %>
+      <p class="search-feedback" role="status"><%= results.empty? ? "No PS2 games found. Try another title." : "#{pluralize(results.size, 'PS2 result')} shown (up to #{CoolromSearch::MAX_RESULTS})." %></p>
+      <% if results.any? %>
+        <ul class="search-results">
+          <% results.each do |result| %>
+            <li><%= link_to result.name, result.url, target: "_blank", rel: "noopener noreferrer", data: { turbo: false } %><span class="muted">CoolROM · new tab</span></li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>

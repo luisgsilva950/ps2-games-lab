@@ -22,7 +22,10 @@ class ChatReplyJob < ApplicationJob
       return unless reply.status == "pending"
 
       begin
-        configuration_error = Message.configuration_error
+        if reply.provider.blank? || reply.model_id.blank?
+          raise Message::SubmissionError, "This queued reply has no recorded provider or model. Send a new message with a selected provider and model."
+        end
+        configuration_error = ChatProvider.configuration_error(provider: reply.provider, model: reply.model_id)
         raise Message::SubmissionError, configuration_error if configuration_error
         raise Message::SubmissionError, "The image is not ready for chat." unless reply.game_image.ready?
 
@@ -32,7 +35,7 @@ class ChatReplyJob < ApplicationJob
           raise Message::SubmissionError, "This conversation exceeds the chat context limit."
         end
 
-        chat = build_chat.with_instructions(instructions)
+        chat = ChatProvider.chat(provider: reply.provider, model: reply.model_id).with_instructions(instructions)
         messages.each { |role, content| chat.add_message(role: role.to_sym, content: content) }
         partial = +""
         flushed_at = 0.0
@@ -63,18 +66,6 @@ class ChatReplyJob < ApplicationJob
 
   private
 
-  def build_chat
-    # The SDK uses its global logger even for per-request contexts. Disable payload/error dumps.
-    RubyLLM.logger.level = Logger::FATAL
-    context = RubyLLM.context do |config|
-      config.openai_api_key = ENV.fetch("OPENAI_API_KEY")
-      config.openai_api_base = ENV.fetch("OPENAI_API_BASE", "https://api.openai.com/v1")
-      config.request_timeout = 60
-      config.max_retries = 0
-    end
-    context.chat(model: ENV.fetch("OPENAI_MODEL"), provider: :openai, protocol: :chat_completions, assume_model_exists: true)
-  end
-
   def instructions_for(image)
     metadata = { name: image.name.to_s.first(255), byte_size: image.byte_size, sha256: image.sha256, status: image.status }
     <<~PROMPT
@@ -94,13 +85,13 @@ class ChatReplyJob < ApplicationJob
     when Message::SubmissionError
       error.message
     when RubyLLM::UnauthorizedError, RubyLLM::ForbiddenError
-      "The model endpoint rejected authentication. Check OPENAI_API_KEY and provider access."
+      "The model endpoint rejected authentication. Check the selected provider API key and access."
     when RubyLLM::RateLimitError, RubyLLM::PaymentRequiredError
       "The model endpoint rejected the request because of quota, rate limits, or billing. Check your provider account."
     when RubyLLM::ContextLengthExceededError
       "The model context limit was exceeded. Use a model with a larger context window."
     when RubyLLM::BadRequestError, RubyLLM::ModelNotFoundError
-      "The model endpoint rejected the request. Check OPENAI_MODEL and OpenAI-compatible chat support."
+      "The model endpoint rejected the request. Check the selected model ID and provider support."
     else
       "The model request failed. Check the endpoint configuration, network connection, and provider availability, then try again."
     end

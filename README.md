@@ -1,8 +1,8 @@
 # PS2 Games Lab
 
-A local Rails workspace for importing PS2 disc images, chatting about modifications through an OpenAI-compatible endpoint, and opening preserved originals in PCSX2.
+A local Rails workspace for importing PS2 disc images, chatting about modifications through Google Gemini or an OpenAI-compatible endpoint, and opening preserved originals in PCSX2.
 
-**Working today:** ISO drag-and-drop import, private read-only originals with SHA-256 verification, persistent conversations, incremental replies over Server-Sent Events (SSE), and a configured desktop launcher.
+**Working today:** PS2 title search on CoolROM with external game-page links, ISO drag-and-drop import, private read-only originals with SHA-256 verification, persistent conversations, incremental replies over Server-Sent Events (SSE), and a configured desktop launcher.
 
 **Not implemented:** binary inspection tools for the model, patch proposals/approval, modified-image builds, game-specific asset editors, or online multiplayer. Chat cannot modify or inspect the ISO. This application is a lab, not a universal natural-language game editor.
 
@@ -10,19 +10,19 @@ A local Rails workspace for importing PS2 disc images, chatting about modificati
 
 The library and conversation occupy the full content width, without a permanent setup sidebar. Import uses a compact horizontal panel below the library; playback is a compact action bar above the conversation. Configuration requirements, original-image metadata, and the PS5 controller guide expand only when needed, so auxiliary information does not create a long column beside empty primary content.
 
-The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. Import and playback controls stack on narrow screens. Pages use normal document scrolling, not nested scroll panes. Streamed message updates preserve composer drafts. Controller mapping stays in PCSX2.
+The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. Import, playback, and provider/model controls stack on narrow screens. Pages use normal document scrolling, not nested scroll panes. Streamed message updates preserve composer drafts and the next reply’s provider/model selection. Controller mapping stays in PCSX2.
 
 ## Screenshots
 
-These captures show the running Rails application after importing a small synthetic ISO9660 fixture and receiving a deterministic response from a local OpenAI-compatible streaming fixture. They illustrate the interface, not real-game boot, model reasoning, controller input, or PCSX2 gameplay. No game or BIOS files are in this repository.
+The library capture shows a recorded local game and live CoolROM search results. The chat capture shows that game’s conversation, provider/model controls, and a live Gemini reply following an earlier OpenAI provider rejection. These are running-application captures, not proof of game boot, controller input, or PCSX2 gameplay. The model receives conversation text and image metadata, not ISO bytes. No game or BIOS files are in this repository.
 
 ### Import and library
 
-![Full-width library with compact ISO import and expandable setup guides](docs/images/library.png)
+![Full-width library with CoolROM title search, external results, and manual ISO import](docs/images/library.png)
 
 ### Game workspace and chat
 
-![Full-width conversation with compact playback controls and expandable original metadata](docs/images/chat-workspace.png)
+![Game conversation with Gemini provider selection, persisted reply provenance, and compact playback controls](docs/images/chat-workspace.png)
 
 ## Run locally
 
@@ -42,19 +42,34 @@ Only run this application locally. There is no user authentication or hardened p
 
 ## Configure chat
 
-Copy .env.example to .env and edit the local file before starting bin/dev:
+Copy .env.example to .env and edit the local file before starting bin/dev. For **Google Gemini** with your existing Gemini API key:
 
 ~~~dotenv
+CHAT_PROVIDER=gemini
+GEMINI_API_KEY=your-private-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
+~~~
+
+Gemini uses RubyLLM’s native Google transport, not an OpenAI compatibility URL. If `GEMINI_MODEL` is unset, it defaults to `gemini-2.5-flash`. Use an exact model ID available to your key and account; an API key’s presence alone does not prove model access, quota, or billing availability.
+
+For **OpenAI or an OpenAI-compatible server**:
+
+~~~dotenv
+CHAT_PROVIDER=openai
 OPENAI_API_BASE=https://api.openai.com/v1
 OPENAI_MODEL=your-provider-model-id
 OPENAI_API_KEY=your-private-api-key
 ~~~
 
-Use your provider's exact model ID. For another OpenAI-compatible server, change OPENAI_API_BASE to its API base URL, typically ending in /v1. It must support streaming chat completions. Local servers may use a nonempty placeholder key if they do not require authentication.
+`CHAT_PROVIDER` accepts `openai` (the default when unset) or `gemini`. Both sets of credentials may coexist. The workspace has an **AI provider** selector and an editable **Model ID**. Changing vendors fills that vendor’s configured default model; you can override the model before sending. A missing credential shows setup guidance without locking the selector, model field, or draft. Sending requires a ready image and no pending reply; the server checks the selected vendor’s configuration before queueing work. Credentials never enter the browser.
+
+Each assistant reply records the selected provider and model when queued. Changing the next reply’s selection while a reply streams does not reroute the pending request. Reloading uses the latest assistant provider/model snapshot, or the environment defaults when no snapshot exists; legacy replies without provider/model metadata do not override those defaults.
+
+Use your provider’s exact model ID. For another OpenAI-compatible server, change `OPENAI_API_BASE` to its API base URL, typically ending in `/v1`. It must support streaming Chat Completions. Local servers may use a nonempty placeholder key if they do not require authentication. API base URLs remain server-side environment configuration, not browser or model-controlled input.
 
 dotenv-rails automatically loads .env in development and test; existing shell environment variables take precedence when starting Rails directly. Foreman also reads .env by default. For shell overrides with bin/dev, use `bin/dev --env /dev/null`; Rails still loads unset values from .env. The file is ignored by Git. Restart both Rails and the worker after changes. Do not commit credentials or paste them into chat. Production configuration uses the process environment.
 
-The endpoint receives the conversation and image metadata: name, size, SHA-256, and import status. **ISO contents are not transmitted.** Endpoint configuration is local environment configuration, not model-controlled input. Provider requests can incur charges.
+The selected vendor receives your new message, prior completed conversation history, and image metadata: name, size, SHA-256, and import status. **Switching vendors sends that completed history to the newly selected vendor on the next request. ISO contents are not transmitted.** Chat cannot inspect or modify the image. Provider requests can incur charges.
 
 One reply may be pending per image. Prompts are limited to 4,000 characters, replies to 8,000, and existing conversation plus a new prompt to 24,000. The full model prompt has a 32,000-character limit. Errors are recorded without displaying raw provider error bodies or credentials.
 
@@ -62,14 +77,23 @@ One reply may be pending per image. Prompts are limited to 4,000 characters, rep
 
 RubyLLM requests a streamed provider response. The job persists partial content at a bounded rate; the browser's EventSource receives escaped message snapshots from GET /game_images/:id/events. This also updates import progress. Connections close after completion or rotate after 25 seconds; automatic reconnect receives current persisted state rather than replaying duplicated tokens.
 
-The composer is not replaced during partial updates. A final workspace refresh preserves an unsent draft, focus, and scroll. Navigating away closes the browser stream without cancelling the durable job. There is no WebSocket chat, Action Cable engine, or Solid Cable dependency. The server samples persisted state; the browser does not periodically poll page requests.
+The composer is not replaced during partial updates. Sending a message retains the current scroll position and returns focus to the composer without a success-confirmation banner. A final workspace refresh preserves an unsent draft, the selected provider and editable model (including changes made during an in-flight reply), focus, and scroll. Navigating away closes the browser stream without cancelling the durable job. There is no WebSocket chat, Action Cable engine, or Solid Cable dependency. The server samples persisted state; the browser does not periodically poll page requests.
+
+## Find a game online
+
+1. In the library, enter a PS2 title in **Find a game on CoolROM**, then select **Search CoolROM**.
+2. Choose a result to open its CoolROM game page in a separate browser tab. The library and any selected ISO remain in place.
+3. Only download images you are authorized to obtain. Handle downloads and archive extraction yourself; never run executable downloaders or bundled installers.
+4. Return to the library and import the extracted `.iso`. Searching or opening a result does not download, import, or launch a game.
+
+The Rails backend sends the search title to `https://coolrom.com/search` with the PS2 filter. It reads at most 1 MiB of HTML, with an eight-second request deadline, and shows up to 25 PS2 links. It does not follow redirects, render third-party HTML/scripts, fetch game files, or contact model endpoints for search. Titles and links are treated as untrusted data. CoolROM is an external website, not a supported API; outages or changed pages produce an explicit unavailable state without affecting local import. No API key is needed.
 
 ## Import an image
 
 1. Extract your disc image before importing: **.iso only**. ZIP, 7z, CHD, and installers are not accepted.
 2. Drop one ISO into the box to start automatically, or use the file picker and Import game button.
 3. Watch upload progress. A background job checks the ISO9660 primary volume descriptor, copies the image into private managed storage, verifies its hash, and makes the original read-only.
-4. The game workspace opens. Chat is enabled after import when model configuration is present.
+4. The game workspace opens. Choose the provider and model; requests can be sent after import when the selected vendor is configured.
 5. PCSX2 launches automatically after import when configured. Missing setup does not prevent import or chat.
 
 The ISO signature check identifies the supported disc format; it does not prove PS2 compatibility, authenticity, malware safety, or bootability. Keep your own backups. The application does not change the selected source file.
@@ -115,7 +139,7 @@ Controller mapping is configured directly in PCSX2, not in this Rails app. Use t
 | Active Record / SQLite | Image metadata, messages, and durable job state |
 | ERB / Turbo / Stimulus / Tailwind | Library, upload progress, chat, responsive UI |
 | Solid Queue | Background import and provider jobs |
-| RubyLLM | OpenAI-compatible streaming transport |
+| RubyLLM | Native Gemini and OpenAI-compatible streaming transports |
 | ActionController::Live / EventSource | SSE delivery; no Action Cable |
 | Private filesystem storage | Large images and isolated PCSX2 settings |
 | Minitest integration tests | HTTP, real persistence, artifacts, failures, and SSE |
@@ -182,4 +206,4 @@ The Rails specialist is .agents/agents/rails-specialist.md. Discovery/slash-comm
 
 Only import images and BIOS files you have the right to use. This project is not affiliated with Sony, Rockstar, or PCSX2. Publishing modified games/assets requires the necessary rights; private experimentation does not grant redistribution rights.
 
-Git excludes storage/, tmp/, logs, .env secrets, config/master.key, and disc/archive files. Screenshots use synthetic fixtures. Keep games, firmware, saves, databases, and API keys out of commits.
+Git excludes storage/, tmp/, logs, .env secrets, config/master.key, and disc/archive files. Screenshots show library metadata, external search results, and conversation text; no game or firmware bytes are included. Keep games, firmware, saves, databases, and API keys out of commits.

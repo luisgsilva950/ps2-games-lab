@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
  root "game_images#index"
+ resource :game_search, only: :show, controller: "game_searches"
  resources :game_images, only: %i[index create show] do
   get :events, on: :member, controller: "game_events", action: :show
   resources :messages, only: :create
