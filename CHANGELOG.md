@@ -2,6 +2,8 @@
 
 ## 2026-10-12
 
+- Redesigned the library and game hub with a PlayStation-inspired navy/blue console layout, responsive local-disc tiles, large headings, rounded panels, and a prominent launch action. Preserved settings, import/search, optional AI, and draft behavior; verified desktop/mobile interactions and accessibility audits without confirmed WCAG A/AA violations. Refreshed screenshots.
+
 - Added validated per-game PCSX2 2.8.2 resolution, renderer, texture filtering, audio synchronization, and frame-limiter settings. Save, reset-to-inherit, and save-and-launch work without AI credentials or ISO modifications; launch failures retain saved settings.
 - Made settings the primary game workspace controls and kept the existing SSE assistant optional/collapsible. Composer drafts, provider/model selections, and expanded state survive tuning submissions; final stream refreshes also preserve unsaved tuning choices.
 - Apply tuning through native per-disc PCSX2 configuration while retaining preexisting native tuning values for reset, unrelated controller overrides, and saves. Refuse playback launches while PCSX2 is already running rather than closing the user's session.

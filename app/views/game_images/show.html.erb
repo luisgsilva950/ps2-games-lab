@@ -11,7 +11,7 @@
 <div data-controller="refresh provider" data-refresh-active-value="<%= streaming %>" data-refresh-url-value="<%= events_game_image_path(@game_image) %>" data-provider-models-value="<%= provider_models.to_json %>" data-provider-notices-value="<%= provider_notices.to_json %>" data-action="provider:restore->provider#restore turbo:load@document->refresh#restoreScroll">
   <%= link_to "← Library", root_path, class: "text-link back-link" %>
   <section class="page-heading game-heading" aria-labelledby="game-heading">
-    <h1 id="game-heading"><%= @game_image.name %></h1>
+    <div><p class="eyebrow">Game hub · PlayStation 2</p><h1 id="game-heading"><%= @game_image.name %></h1></div>
     <span class="status status-<%= @game_image.status %>"><%= @game_image.status.humanize %></span>
   </section>
   <% if %w[pending importing].include?(@game_image.status) %>
@@ -27,7 +27,7 @@
         <% unless launch_configured %>
           <div class="notice">Set <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code> to your installed emulator and legally supplied BIOS, then restart Rails.</div>
         <% end %>
-        <%= button_to "Launch original", game_image_launch_path(@game_image), class: "button button-secondary", disabled: !@game_image.ready? || !launch_configured, data: { turbo: false } %>
+        <%= button_to "Launch original", game_image_launch_path(@game_image), class: "button button-primary", disabled: !@game_image.ready? || !launch_configured, data: { turbo: false } %>
         <p class="fine-print">A process launch does not confirm game boot or gameplay.</p>
         <% if @game_image.launch_error.present? %><p class="error-text" role="alert"><%= @game_image.launch_error %></p><% end %>
       </section>

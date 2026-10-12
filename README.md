@@ -8,21 +8,21 @@ A local Rails workspace for importing PS2 disc images, tuning per-game PCSX2 pla
 
 ## Interface
 
-The library and game workspace occupy the full content width, without a permanent setup sidebar. Import uses a compact horizontal panel below the library. Game settings are the primary workspace controls beneath playback; the optional AI assistant opens in a collapsible conversation panel. Configuration requirements, original-image metadata, and the PS5 controller guide expand only when needed.
+The PlayStation-inspired library presents imported games as a responsive tile grid, with search and import tools below. Each game opens a dedicated hub with a prominent launch action and per-game settings. The optional AI assistant, configuration requirements, original-image metadata, and controller guide expand only when needed.
 
-The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. Controls stack on narrow screens. Pages use normal document scrolling, not nested scroll panes. Streamed message updates preserve composer drafts, provider/model selection, the assistant's expanded state, and unsaved tuning choices. Saving or resetting tuning also preserves the composer. Controller mapping stays in PCSX2.
+The interface uses a dark navy canvas, electric-blue actions, soft blue lighting, rounded panels, and large sans-serif headings. Disc tiles use original abstract artwork rather than downloaded covers or official logos. This is an independent local lab, not an official PlayStation interface. Controls stack on narrow screens; keyboard focus stays visible and reduced-motion preferences are respected. Pages use normal document scrolling. Existing SSE delivery, composer drafts, provider/model selection, and tuning persistence are unchanged.
 
 ## Screenshots
 
-The library capture shows a recorded local game and live CoolROM search results. The chat capture shows that game’s conversation, provider/model controls, and a live Gemini reply following an earlier OpenAI provider rejection. These are running-application captures, not proof of game boot, controller input, or PCSX2 gameplay. The model receives conversation text and image metadata, not ISO bytes. No game or BIOS files are in this repository.
+These running-application captures show the console-style library and the game hub's playback and tuning controls, with AI collapsed. They are UI evidence, not proof of controller input or gameplay. No game or BIOS files are in this repository.
 
 ### Import and library
 
-![Full-width library with CoolROM title search, external results, and manual ISO import](docs/images/library.png)
+![PlayStation-inspired dark library with local disc tiles, title search, and ISO import](docs/images/library.png)
 
-### Game workspace and chat
+### Game hub and settings
 
-![Game conversation with Gemini provider selection, persisted reply provenance, and compact playback controls](docs/images/chat-workspace.png)
+![Dark game hub with prominent launch action, per-game settings, and optional AI assistant](docs/images/chat-workspace.png)
 
 ## Run locally
 

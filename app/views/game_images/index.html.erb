@@ -1,11 +1,14 @@
 <% content_for :title, "Library · PS2 Games Lab" %>
 <div class="library-layout">
   <section class="library-section" aria-labelledby="library-heading">
+    <div class="library-hero">
+    <p class="eyebrow">Your local console</p>
     <div class="section-bar">
       <h1 id="library-heading">Library</h1>
       <span class="muted"><%= pluralize(@game_images.size, "image") %></span>
     </div>
-    <p class="section-description">Imported originals and their conversations.</p>
+    <p class="section-description">Your games. Your settings. Ready when you are.</p>
+    </div>
     <% if @game_images.empty? %>
       <div class="empty-state">
         <h2>No images imported</h2>
@@ -15,6 +18,7 @@
       <div class="game-list">
         <% @game_images.each do |game| %>
           <article class="game-row">
+            <div class="game-art" aria-hidden="true"><strong>PS2</strong><span>LOCAL DISC</span></div>
             <div class="game-summary">
               <h2><%= link_to game.name, game_image_path(game) %></h2>
               <p><%= game.byte_size.present? ? number_to_human_size(game.byte_size) : "Size pending" %> · Imported <%= l(game.created_at, format: :short) %></p>

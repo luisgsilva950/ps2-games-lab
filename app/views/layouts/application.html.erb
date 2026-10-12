@@ -14,11 +14,12 @@
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
       <%= link_to root_path, class: "brand" do %>
-        <span>PS2 <strong>Games Lab</strong></span>
+        <span class="console-mark" aria-hidden="true">PS2</span>
+        <span>Games <strong>Lab</strong></span>
       <% end %>
       <nav class="header-nav" aria-label="Main navigation">
         <%= link_to "Library", root_path, aria: { current: current_page?(root_path) ? "page" : nil } %>
-        <span class="local-badge">Local workspace</span>
+        <span class="local-badge">Local console</span>
       </nav>
     </header>
     <main id="main" class="workspace" tabindex="-1">
