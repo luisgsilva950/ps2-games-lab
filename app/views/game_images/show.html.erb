@@ -16,7 +16,18 @@
   <% if @game_image.error.present? %>
     <div class="notice notice-error" role="alert">Import failed: <%= @game_image.error %></div>
   <% end %>
-  <div class="workspace-grid">
+  <div class="game-layout">
+      <section class="panel playback-panel" aria-labelledby="launch-heading">
+        <div class="playback-heading"><h2 id="launch-heading">Playback</h2><span class="muted">Launch status: <%= @game_image.launch_status.humanize %></span></div>
+        <p>Launch this original in a separate PCSX2 desktop window on the computer running Rails.</p>
+        <% unless launch_configured %>
+          <div class="notice">Set <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code> to your installed emulator and legally supplied BIOS, then restart Rails.</div>
+        <% end %>
+        <%= button_to "Launch original", game_image_launch_path(@game_image), class: "button button-secondary", disabled: !@game_image.ready? || !launch_configured, data: { turbo: false } %>
+        <p class="fine-print">A process launch does not confirm game boot or gameplay.</p>
+        <% if @game_image.launch_error.present? %><p class="error-text" role="alert"><%= @game_image.launch_error %></p><% end %>
+      </section>
+
     <section class="panel conversation" aria-labelledby="conversation-heading">
       <div class="conversation-header">
         <h2 id="conversation-heading">Conversation</h2>
@@ -38,27 +49,19 @@
         </div>
       <% end %>
     </section>
-    <aside class="image-sidebar">
-      <section class="panel" aria-labelledby="image-heading">
-        <h2 id="image-heading">Original</h2>
+    <div class="workspace-details">
+      <details class="panel original-details">
+        <summary id="image-heading">Original image · <%= @game_image.byte_size.present? ? number_to_human_size(@game_image.byte_size) : "Size pending" %> · Read-only</summary>
+        <div class="setup-instructions">
         <p>The managed original is read-only. Import never changes your source file, and this chat cannot write to the image.</p>
         <dl class="image-metadata">
           <dt>Size</dt><dd><%= @game_image.byte_size.present? ? number_to_human_size(@game_image.byte_size) : "Pending" %></dd>
           <dt>SHA-256</dt><dd class="hash"><%= @game_image.sha256.presence || "Calculated during import" %></dd>
           <dt>Import status</dt><dd><%= @game_image.status.humanize %></dd>
         </dl>
-      </section>
-      <section class="panel" aria-labelledby="launch-heading">
-        <h2 id="launch-heading">Playback</h2>
-        <p>Launch this original in a separate PCSX2 desktop window on the computer running Rails.</p>
-        <% unless launch_configured %>
-          <div class="notice">Set <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code> to your installed emulator and legally supplied BIOS, then restart Rails.</div>
-        <% end %>
-        <%= button_to "Launch original", game_image_launch_path(@game_image), class: "button button-secondary button-full", disabled: !@game_image.ready? || !launch_configured, data: { turbo: false } %>
-        <p class="fine-print">Launch status: <%= @game_image.launch_status.humanize %>. A process launch does not confirm game boot or gameplay.</p>
-        <% if @game_image.launch_error.present? %><p class="error-text" role="alert"><%= @game_image.launch_error %></p><% end %>
-      </section>
+        </div>
+      </details>
       <%= render "dualsense_setup" %>
-    </aside>
+    </div>
   </div>
 </div>

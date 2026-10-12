@@ -8,21 +8,21 @@ A local Rails workspace for importing PS2 disc images, chatting about modificati
 
 ## Interface
 
-The library-first layout puts imported games and their status ahead of setup. A separate sidebar contains the ISO drop zone, configuration status, and an expandable PS5 controller guide. The game workspace pairs the conversation and composer with original-image metadata and PCSX2 playback controls.
+The library and conversation occupy the full content width, without a permanent setup sidebar. Import uses a compact horizontal panel below the library; playback is a compact action bar above the conversation. Configuration requirements, original-image metadata, and the PS5 controller guide expand only when needed, so auxiliary information does not create a long column beside empty primary content.
 
-The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. On narrow screens, the library and workspace stack into a single column. Streamed message updates preserve composer drafts. Controller setup is documented here and in the app; mapping itself stays in PCSX2.
+The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. Import and playback controls stack on narrow screens. Pages use normal document scrolling, not nested scroll panes. Streamed message updates preserve composer drafts. Controller mapping stays in PCSX2.
 
 ## Screenshots
 
-These captures show the redesigned running Rails application with an isolated synthetic documentation record and seeded example messages. They illustrate the interface, not a real game import, live model reasoning, controller input, or PCSX2 gameplay. No game or BIOS files are in this repository.
+These captures show the running Rails application after importing a small synthetic ISO9660 fixture and receiving a deterministic response from a local OpenAI-compatible streaming fixture. They illustrate the interface, not real-game boot, model reasoning, controller input, or PCSX2 gameplay. No game or BIOS files are in this repository.
 
 ### Import and library
 
-![Running library with ISO drop zone and configuration status](docs/images/library.png)
+![Full-width library with compact ISO import and expandable setup guides](docs/images/library.png)
 
 ### Game workspace and chat
 
-![Running game workspace with persisted chat, original hash, and playback setup](docs/images/chat-workspace.png)
+![Full-width conversation with compact playback controls and expandable original metadata](docs/images/chat-workspace.png)
 
 ## Run locally
 

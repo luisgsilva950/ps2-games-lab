@@ -5,6 +5,7 @@
 - Removed lab control mapping, keyboard profiles, game assignments, and PCSX2 import/export hooks. Existing native PCSX2 settings and exported profiles remain user-controlled.
 - Documented PS5 DualSense USB/Bluetooth setup and configuration in the lab-launched PCSX2 instance; added an in-app setup guide.
 - Redesigned the library and conversation workspace with a neutral palette, compact navigation, clearer hierarchy, and responsive layouts. ISO drop/import, SSE replies, draft preservation, and playback configuration states remain intact.
+- Replaced permanent library/workspace sidebars with full-width primary content, compact import/playback controls, and expandable configuration, metadata, and controller guides. Removed sidebar-driven blank space and kept normal document scrolling on desktop and mobile.
 
 ## 2026-10-11
 
