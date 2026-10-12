@@ -5,34 +5,60 @@
 <% launch_configured = ENV["PCSX2_EXECUTABLE"].present? && ENV["PCSX2_BIOS_PATH"].present? %>
 <% reply_pending = messages.any? { |message| message.status == "pending" } %>
 <div data-controller="refresh" data-refresh-active-value="<%= streaming %>" data-refresh-url-value="<%= events_game_image_path(@game_image) %>">
-  <%= link_to "← Your library", root_path, class: "text-link back-link" %>
-  <section class="page-heading game-heading"><p class="eyebrow">Game workspace</p><h1><%= @game_image.name %></h1><span class="status status-<%= @game_image.status %>"><%= @game_image.status.humanize %></span></section>
-  <% if %w[pending importing].include?(@game_image.status) %><div class="notice" role="status">Import in progress. Your ISO is being copied and hashed in the background. This page updates automatically.</div><% end %>
-  <% if @game_image.error.present? %><div class="notice notice-error" role="alert">Import failed: <%= @game_image.error %></div><% end %>
+  <%= link_to "← Library", root_path, class: "text-link back-link" %>
+  <section class="page-heading game-heading" aria-labelledby="game-heading">
+    <h1 id="game-heading"><%= @game_image.name %></h1>
+    <span class="status status-<%= @game_image.status %>"><%= @game_image.status.humanize %></span>
+  </section>
+  <% if %w[pending importing].include?(@game_image.status) %>
+    <div class="notice" role="status">Import in progress. Your ISO is being copied and hashed in the background. This page updates automatically.</div>
+  <% end %>
+  <% if @game_image.error.present? %>
+    <div class="notice notice-error" role="alert">Import failed: <%= @game_image.error %></div>
+  <% end %>
   <div class="workspace-grid">
     <section class="panel conversation" aria-labelledby="conversation-heading">
-      <div class="conversation-header"><div><p class="eyebrow">02 / Conversation</p><h2 id="conversation-heading">Talk about your game</h2></div><span class="muted">AI assistant</span></div>
+      <div class="conversation-header">
+        <h2 id="conversation-heading">Conversation</h2>
+        <span class="muted">AI assistant</span>
+      </div>
       <p class="conversation-disclosure">Messages and image metadata (name, size, hash) are sent to your configured model endpoint. ISO bytes are not sent. Chat does not modify your image.</p>
       <div class="messages" data-refresh-target="messages" aria-live="polite" aria-relevant="additions text">
         <%= render "messages", messages: messages %>
       </div>
-      <% unless chat_configured %><div class="notice">To enable chat, set <code>OPENAI_API_KEY</code> and <code>OPENAI_MODEL</code>, then restart Rails. <code>OPENAI_API_BASE</code> is optional.</div><% end %>
+      <% unless chat_configured %>
+        <div class="notice">To enable chat, set <code>OPENAI_API_KEY</code> and <code>OPENAI_MODEL</code>, then restart Rails. <code>OPENAI_API_BASE</code> is optional.</div>
+      <% end %>
       <%= form_with url: game_image_messages_path(@game_image), data: { turbo: false, action: "submit->refresh#clearDraft" }, class: "chat-form" do |form| %>
         <%= form.label :content, "Your message" %>
-        <%= form.text_area :content, rows: 4, required: true, maxlength: 4000, placeholder: "What would you like to know about this game?", disabled: !chat_configured || !@game_image.ready?, data: { refresh_target: "draft" } %>
-        <div class="composer-footer"><span class="fine-print"><%= @game_image.ready? ? "AI answers may be inaccurate. Verify important advice." : "Chat is available after a successful import." %></span><%= form.submit "Send message", class: "button button-primary", disabled: !chat_configured || !@game_image.ready? || reply_pending %></div>
+        <%= form.text_area :content, rows: 4, required: true, maxlength: 4000, placeholder: "Ask about this game or PCSX2…", disabled: !chat_configured || !@game_image.ready?, data: { refresh_target: "draft" } %>
+        <div class="composer-footer">
+          <span class="fine-print"><%= @game_image.ready? ? "AI answers may be inaccurate. Verify important advice." : "Chat is available after a successful import." %></span>
+          <%= form.submit "Send message", class: "button button-primary", disabled: !chat_configured || !@game_image.ready? || reply_pending %>
+        </div>
       <% end %>
     </section>
     <aside class="image-sidebar">
-      <section class="panel" aria-labelledby="image-heading"><p class="eyebrow">Original image</p><h2 id="image-heading">Preserved, not patched.</h2><p>The managed original is read-only. Import never changes your source file, and this chat cannot write to the image.</p>
-        <dl class="image-metadata"><dt>Size</dt><dd><%= @game_image.byte_size.present? ? number_to_human_size(@game_image.byte_size) : "Pending" %></dd><dt>SHA-256</dt><dd class="hash"><%= @game_image.sha256.presence || "Calculated during import" %></dd><dt>Import status</dt><dd><%= @game_image.status.humanize %></dd></dl>
+      <section class="panel" aria-labelledby="image-heading">
+        <h2 id="image-heading">Original</h2>
+        <p>The managed original is read-only. Import never changes your source file, and this chat cannot write to the image.</p>
+        <dl class="image-metadata">
+          <dt>Size</dt><dd><%= @game_image.byte_size.present? ? number_to_human_size(@game_image.byte_size) : "Pending" %></dd>
+          <dt>SHA-256</dt><dd class="hash"><%= @game_image.sha256.presence || "Calculated during import" %></dd>
+          <dt>Import status</dt><dd><%= @game_image.status.humanize %></dd>
+        </dl>
       </section>
-      <section class="panel" aria-labelledby="launch-heading"><p class="eyebrow">03 / Playback</p><h2 id="launch-heading">Open in PCSX2</h2><p>Launch this original in a separate desktop window on the computer running Rails.</p>
-        <% unless launch_configured %><div class="notice">Set <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code> to your installed emulator and legally supplied BIOS, then restart Rails.</div><% end %>
+      <section class="panel" aria-labelledby="launch-heading">
+        <h2 id="launch-heading">Playback</h2>
+        <p>Launch this original in a separate PCSX2 desktop window on the computer running Rails.</p>
+        <% unless launch_configured %>
+          <div class="notice">Set <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code> to your installed emulator and legally supplied BIOS, then restart Rails.</div>
+        <% end %>
         <%= button_to "Launch original", game_image_launch_path(@game_image), class: "button button-secondary button-full", disabled: !@game_image.ready? || !launch_configured, data: { turbo: false } %>
         <p class="fine-print">Launch status: <%= @game_image.launch_status.humanize %>. A process launch does not confirm game boot or gameplay.</p>
         <% if @game_image.launch_error.present? %><p class="error-text" role="alert"><%= @game_image.launch_error %></p><% end %>
       </section>
+      <%= render "dualsense_setup" %>
     </aside>
   </div>
 </div>

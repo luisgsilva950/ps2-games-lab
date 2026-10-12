@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-12
+
+- Removed lab control mapping, keyboard profiles, game assignments, and PCSX2 import/export hooks. Existing native PCSX2 settings and exported profiles remain user-controlled.
+- Documented PS5 DualSense USB/Bluetooth setup and configuration in the lab-launched PCSX2 instance; added an in-app setup guide.
+- Redesigned the library and conversation workspace with a neutral palette, compact navigation, clearer hierarchy, and responsive layouts. ISO drop/import, SSE replies, draft preservation, and playback configuration states remain intact.
+
 ## 2026-10-11
 
 - Added Rails 8.1 local library with automatic ISO drag/drop, upload progress, background import, read-only private originals, and SHA-256 verification.

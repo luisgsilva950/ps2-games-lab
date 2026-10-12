@@ -6,9 +6,15 @@ A local Rails workspace for importing PS2 disc images, chatting about modificati
 
 **Not implemented:** binary inspection tools for the model, patch proposals/approval, modified-image builds, game-specific asset editors, or online multiplayer. Chat cannot modify or inspect the ISO. This application is a lab, not a universal natural-language game editor.
 
+## Interface
+
+The library-first layout puts imported games and their status ahead of setup. A separate sidebar contains the ISO drop zone, configuration status, and an expandable PS5 controller guide. The game workspace pairs the conversation and composer with original-image metadata and PCSX2 playback controls.
+
+The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. On narrow screens, the library and workspace stack into a single column. Streamed message updates preserve composer drafts. Controller setup is documented here and in the app; mapping itself stays in PCSX2.
+
 ## Screenshots
 
-The library screenshot shows the running Rails app after importing the real local Midnight Club ISO. The chat screenshot uses small synthetic ISO9660 fixtures and a deterministic local OpenAI-compatible streaming fixture. These are actual application captures, not mockups; neither is a screenshot of PCSX2 gameplay. No game or BIOS files are in this repository.
+These captures show the redesigned running Rails application with an isolated synthetic documentation record and seeded example messages. They illustrate the interface, not a real game import, live model reasoning, controller input, or PCSX2 gameplay. No game or BIOS files are in this repository.
 
 ### Import and library
 
@@ -89,6 +95,18 @@ Settings and saves are isolated under storage/pcsx2/<digest-of-resolved-BIOS-pat
 
 **Launched means a process was started—not that a window rendered, the BIOS loaded, or the game booted.** An emulator that exits after startup may still have this status. Verify actual playback in the desktop window. A browser cannot embed or directly launch PCSX2; the local Rails backend starts it on the same machine.
 
+## Set up a PS5 DualSense controller
+
+Controller mapping is configured directly in PCSX2, not in this Rails app. Use the **PCSX2 window launched by the lab**: its settings live in the isolated data directory above, so configuring a separately opened PCSX2 with its default profile will not configure lab playback.
+
+1. **USB:** connect the DualSense to the Mac with a USB-C **data-capable cable** (a charge-only cable will not expose the controller).
+2. **Bluetooth:** disconnect USB and turn the controller off. Hold **Create + PS** until the light bar flashes, then open **macOS System Settings → Bluetooth** and connect **Wireless Controller** (the displayed name can vary). See [Sony’s official Bluetooth pairing guide](https://www.playstation.com/en-gb/support/hardware/pair-dualsense-controller-bluetooth/).
+3. In the lab-launched PCSX2 window, open **Settings → Controllers** and enable the **SDL** input source. In **Controller Port 1**, set the controller type to **DualShock 2**, select **Automatic Mapping**, and choose the detected DualSense/Wireless Controller device. Selecting a device is required; enabling SDL alone does not map the port. See [PCSX2’s controller configuration guide](https://pcsx2.net/docs/configuration/controllers).
+4. Check the bindings and test the D-pad, face buttons, shoulder buttons/triggers, both sticks, and stick clicks in PCSX2; then confirm menu navigation and controls in the game. If Automatic Mapping does not work, check that SDL detects the device and disable SDL Raw Input. DualShock 4 / DualSense Enhanced Mode is optional. Hardware input and gameplay still need a hands-on check.
+5. If a particular game behaves differently, inspect its **Properties → Controllers** / per-game controller settings in PCSX2. A per-game override or selected input profile can take precedence over global settings; adjust or clear that override in PCSX2, then save and restart the game when required. Do not discard an unsaved emulator session.
+
+**Existing exports remain user-controlled.** The app no longer creates, imports, assigns, updates, or clears controller profiles. Upgrading with `bin/rails db:migrate` removes only the old lab database profiles and mapping columns; it does not delete or rewrite existing PCSX2 input profiles, per-game configuration, settings, or saves. Old exported profiles and their per-game selections may therefore remain active until you change them yourself in PCSX2.
+
 ## Architecture and safety
 
 | Component | Responsibility |
@@ -131,7 +149,7 @@ Observed verification for this release:
 - Visual gameplay and DualSense input remain unverified: this automation process lacked macOS Screen Recording and Accessibility permissions, and hardware discovery found no matching connected PlayStation controller. No permission bypass was attempted. BIOS/game files, emulator settings, and local `.env` stay Git-ignored.
 - Rails loaded emulator/BIOS settings from the ignored `.env` without shell exports.
 
-For the remaining hands-on check, connect your DualSense over USB or Bluetooth, open the running PCSX2 window, and use Settings → Controllers → Controller Port 1 → Automatic Mapping. Choose the detected controller, then confirm menus, steering, and acceleration in a race. Desktop automation requires macOS permissions granted by the user; those permissions are not required to play manually.
+For the remaining hands-on check, follow the DualSense setup guide above in the lab-launched PCSX2 window, then confirm menus, steering, and acceleration in a race. Desktop automation requires macOS permissions granted by the user; those permissions are not required to play manually.
 
 Brakeman runs with all default checks and warning failures enabled: the corrected storage boundary produces zero warnings and zero scanner errors. Image staging/import IO belongs to GameImage, behind strict UUID, fixed-filename, and symlink checks; the controller and job only orchestrate it. Reply locks use validated integer job identities and refuse symlinks/hardlinks. Bundler Audit with freshly updated advisory data and Importmap Audit passed locally. Both GitHub CI and bin/ci refresh the gem advisory database before scanning. No scanner checks were disabled; the vulnerability ignore list is empty.
 

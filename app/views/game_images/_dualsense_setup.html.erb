@@ -1,0 +1,14 @@
+<details class="panel controller-setup">
+  <summary>PS5 controller setup</summary>
+  <div class="setup-instructions">
+    <p>Connect your DualSense to the computer running PCSX2, not to the browser.</p>
+    <ul>
+      <li><strong>USB:</strong> use a USB data cable. A charging-only cable will not carry controller input.</li>
+      <li><strong>Bluetooth:</strong> with the controller off, hold <strong>Create + PS</strong> until the light bar flashes. Open your operating system’s Bluetooth settings and pair the controller.</li>
+      <li><strong>PCSX2:</strong> configure the instance opened by <strong>Launch original</strong>. The lab uses its own data directory under <code>storage/pcsx2/&lt;BIOS digest&gt;/PCSX2</code>; settings in an unrelated desktop profile will not apply.</li>
+      <li>Open <strong>Settings → Controllers</strong> and enable the <strong>SDL</strong> input source. Under <strong>Controller Port 1</strong>, choose <strong>DualShock 2</strong>, then <strong>Automatic Mapping</strong> and select your DualSense device.</li>
+      <li>Verify both sticks and every button in PCSX2 before playing. Controller mapping stays in PCSX2; there is no browser mapping.</li>
+    </ul>
+    <p class="fine-print">See the official <%= link_to "PlayStation pairing guide", "https://www.playstation.com/en-gb/support/hardware/pair-dualsense-controller-bluetooth/" %> and <%= link_to "PCSX2 controller guide", "https://pcsx2.net/docs/configuration/controllers" %> for device and version-specific details.</p>
+  </div>
+</details>

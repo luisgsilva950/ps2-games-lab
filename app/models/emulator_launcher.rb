@@ -73,10 +73,14 @@ class EmulatorLauncher
     File.file?(path) && File.readable?(path) && File.size(path).positive?
   end
 
+  def configuration_root(bios)
+    Rails.root.join("storage", "pcsx2", Digest::SHA256.hexdigest(bios))
+  end
+
   def prepare_configuration(bios)
     # Isolate saves and configuration from the user's normal PCSX2 installation.
     # PCSX2 2.8.2 appends "PCSX2" to the custom -datapath on all platforms.
-    data_root = Rails.root.join("storage", "pcsx2", Digest::SHA256.hexdigest(bios))
+    data_root = configuration_root(bios)
     profile = data_root.join("PCSX2")
     settings = profile.join("inis")
     [ Rails.root.join("storage"), data_root.parent, data_root, profile, settings ].each do |directory|

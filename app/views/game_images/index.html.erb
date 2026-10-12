@@ -1,56 +1,63 @@
 <% content_for :title, "Library · PS2 Games Lab" %>
-<section class="page-heading">
-  <p class="eyebrow">Your personal console lab</p>
-  <h1>A new home for your PS2 library.</h1>
-  <p class="lede">Import an ISO, open a conversation, and launch your original in PCSX2.</p>
-</section>
 <div class="library-grid">
-  <section class="panel import-panel" aria-labelledby="import-heading">
-    <div class="section-heading"><p class="eyebrow">01 / Import</p><h2 id="import-heading">Bring your own game</h2></div>
-    <%= form_with url: game_images_path, multipart: true, data: { controller: "upload", action: "submit->upload#submit", turbo: false } do |form| %>
-      <div class="drop-zone" data-upload-target="zone" data-action="dragover->upload#dragover dragleave->upload#dragleave drop->upload#drop">
-        <span class="disc-symbol" aria-hidden="true">◎</span>
-        <h3>Drop your ISO here</h3>
-        <p>Or choose a file from your computer.</p>
-        <%= form.label :image, "Choose ISO", class: "button button-secondary file-label" %>
-        <%= form.file_field :image, accept: ".iso", required: true, class: "file-input", data: { upload_target: "input", action: "change->upload#selected" } %>
-        <p class="file-name" data-upload-target="filename">One .iso image at a time</p>
+  <section class="library-section" aria-labelledby="library-heading">
+    <div class="section-bar">
+      <h1 id="library-heading">Library</h1>
+      <span class="muted"><%= pluralize(@game_images.size, "image") %></span>
+    </div>
+    <p class="section-description">Imported originals and their conversations.</p>
+    <% if @game_images.empty? %>
+      <div class="empty-state">
+        <h2>No images imported</h2>
+        <p>Import an ISO to open its workspace. AI and playback setup can wait.</p>
+        <%= link_to "Import ISO", "#import-heading", class: "text-link" %>
       </div>
-      <div class="upload-progress" data-upload-target="progressContainer" hidden>
-        <label for="upload-progress">Uploading to local storage</label>
-        <progress id="upload-progress" max="100" value="0" data-upload-target="progress"></progress>
+    <% else %>
+      <div class="game-list">
+        <% @game_images.each do |game| %>
+          <article class="game-row">
+            <div class="game-summary">
+              <h2><%= link_to game.name, game_image_path(game) %></h2>
+              <p><%= game.byte_size.present? ? number_to_human_size(game.byte_size) : "Size pending" %> · Imported <%= l(game.created_at, format: :short) %></p>
+              <% if game.error.present? %><p class="error-text"><%= game.error %></p><% end %>
+            </div>
+            <span class="status status-<%= game.status %>"><%= game.status.humanize %></span>
+            <%= link_to "Open workspace", game_image_path(game), class: "text-link", aria: { label: "Open workspace for #{game.name}" } %>
+          </article>
+        <% end %>
       </div>
-      <p class="upload-feedback" data-upload-target="feedback" role="status" aria-live="polite"></p>
-      <%= form.submit "Import game", class: "button button-primary button-full", data: { upload_target: "submit" } %>
     <% end %>
-    <p class="fine-print">Only import images you have the right to use. Originals are stored privately and never modified.</p>
   </section>
-  <aside class="panel setup-panel" aria-labelledby="setup-heading">
-    <p class="eyebrow">Workspace setup</p><h2 id="setup-heading">Ready when you are.</h2>
-    <p>Import works without AI or emulator setup. Configure environment variables, then restart Rails.</p>
-    <ul class="setup-list">
-      <li><span>AI conversation</span><strong class="<%= ENV["OPENAI_API_KEY"].present? && ENV["OPENAI_MODEL"].present? ? "configured" : "muted" %>"><%= ENV["OPENAI_API_KEY"].present? && ENV["OPENAI_MODEL"].present? ? "Configured" : "Not configured" %></strong></li>
-      <li><span>PCSX2 executable</span><strong><%= ENV["PCSX2_EXECUTABLE"].present? ? "Configured" : "Not configured" %></strong></li>
-      <li><span>Your BIOS</span><strong><%= ENV["PCSX2_BIOS_PATH"].present? ? "Configured" : "Not configured" %></strong></li>
-    </ul>
-    <p class="fine-print">Chat needs <code>OPENAI_API_KEY</code> and <code>OPENAI_MODEL</code>. Optionally set <code>OPENAI_API_BASE</code> for an OpenAI-compatible endpoint.</p>
-    <p class="fine-print">Playback needs <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code>. No emulator, BIOS, or games are bundled. Configuration presence does not verify playback.</p>
+  <aside class="library-sidebar">
+    <section class="panel import-panel" aria-labelledby="import-heading">
+      <h2 id="import-heading">Import ISO</h2>
+      <%= form_with url: game_images_path, multipart: true, data: { controller: "upload", action: "submit->upload#submit", turbo: false } do |form| %>
+        <div class="drop-zone" data-upload-target="zone" data-action="dragover->upload#dragover dragleave->upload#dragleave drop->upload#drop">
+          <p class="drop-title">Drop an ISO here</p>
+          <%= form.label :image, "Or choose an ISO file", class: "file-label" %>
+          <%= form.file_field :image, accept: ".iso", required: true, class: "file-input", data: { upload_target: "input", action: "change->upload#selected" } %>
+          <p class="file-name" data-upload-target="filename">One .iso image at a time</p>
+        </div>
+        <div class="upload-progress" data-upload-target="progressContainer" hidden>
+          <label for="upload-progress">Uploading to local storage</label>
+          <progress id="upload-progress" max="100" value="0" data-upload-target="progress"></progress>
+        </div>
+        <p class="upload-feedback" data-upload-target="feedback" role="status" aria-live="polite"></p>
+        <%= form.submit "Import game", class: "button button-primary button-full", data: { upload_target: "submit" } %>
+      <% end %>
+      <p class="fine-print">Only import images you have the right to use. Originals are stored privately and never modified.</p>
+    </section>
+    <section class="panel setup-panel" aria-labelledby="setup-heading">
+      <h2 id="setup-heading">Configuration</h2>
+      <p>Import works without AI or emulator setup. Set environment variables, then restart Rails.</p>
+      <ul class="setup-list">
+        <li><span>AI conversation</span><strong class="<%= ENV["OPENAI_API_KEY"].present? && ENV["OPENAI_MODEL"].present? ? "configured" : "muted" %>"><%= ENV["OPENAI_API_KEY"].present? && ENV["OPENAI_MODEL"].present? ? "Configured" : "Not configured" %></strong></li>
+        <li><span>PCSX2 executable</span><strong><%= ENV["PCSX2_EXECUTABLE"].present? ? "Configured" : "Not configured" %></strong></li>
+        <li><span>Your BIOS</span><strong><%= ENV["PCSX2_BIOS_PATH"].present? ? "Configured" : "Not configured" %></strong></li>
+      </ul>
+      <p class="fine-print">Chat needs <code>OPENAI_API_KEY</code> and <code>OPENAI_MODEL</code>. Optionally set <code>OPENAI_API_BASE</code> for an OpenAI-compatible endpoint.</p>
+      <p class="fine-print">Playback needs <code>PCSX2_EXECUTABLE</code> and <code>PCSX2_BIOS_PATH</code>. No emulator, BIOS, or games are bundled. Configuration presence does not verify playback.</p>
+    </section>
+    <%= render "dualsense_setup" %>
   </aside>
 </div>
-<section class="library-section" aria-labelledby="library-heading">
-  <div class="section-bar"><h2 id="library-heading">Your library</h2><span class="muted"><%= pluralize(@game_images.size, "image") %></span></div>
-  <% if @game_images.empty? %>
-    <div class="panel empty-state"><h3>Your first game starts here.</h3><p>Import an ISO above to open its workspace.</p></div>
-  <% else %>
-    <div class="game-list">
-      <% @game_images.each do |game| %>
-        <article class="panel game-row">
-          <span class="game-icon" aria-hidden="true">II</span>
-          <div class="game-summary"><h3><%= link_to game.name, game_image_path(game) %></h3><p><%= game.byte_size.present? ? number_to_human_size(game.byte_size) : "Size pending" %> · Imported <%= l(game.created_at, format: :short) %></p><% if game.error.present? %><p class="error-text"><%= game.error %></p><% end %></div>
-          <span class="status status-<%= game.status %>"><%= game.status.humanize %></span>
-          <%= link_to "Open workspace →", game_image_path(game), class: "text-link" %>
-        </article>
-      <% end %>
-    </div>
-  <% end %>
-</section>

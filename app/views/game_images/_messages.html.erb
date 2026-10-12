@@ -1,4 +1,4 @@
-<% if messages.empty? %><div class="chat-empty"><h3>Start with a question.</h3><p>Explore your game, discuss an idea, or ask about PCSX2. This workflow supports conversation, not binary patches.</p></div><% end %>
+<% if messages.empty? %><div class="chat-empty"><h3>No messages yet</h3><p>Ask about your game, discuss an idea, or ask about PCSX2. This workflow supports conversation, not binary patches.</p></div><% end %>
 <% messages.each do |message| %>
   <article class="message message-<%= message.role %>">
     <div class="message-heading"><strong><%= message.role == "user" ? "You" : "Assistant" %></strong><span class="muted"><%= message.status.humanize %></span></div>
