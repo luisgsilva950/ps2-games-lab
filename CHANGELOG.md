@@ -2,6 +2,7 @@
 
 ## 2026-10-12
 
+- Rebalanced landing-page proportions: shared heading, wider adaptive library, compact stacked search/import column, bounded disc artwork, and a separate setup-guide row. Verified desktop/tablet/mobile layouts, live CoolROM search with preserved file selection, invalid-ISO drop handling, and no confirmed WCAG A/AA audit violations. Refreshed the library screenshot.
 - Redesigned the library and game hub with a PlayStation-inspired navy/blue console layout, responsive local-disc tiles, large headings, rounded panels, and a prominent launch action. Preserved settings, import/search, optional AI, and draft behavior; verified desktop/mobile interactions and accessibility audits without confirmed WCAG A/AA violations. Refreshed screenshots.
 
 - Added validated per-game PCSX2 2.8.2 resolution, renderer, texture filtering, audio synchronization, and frame-limiter settings. Save, reset-to-inherit, and save-and-launch work without AI credentials or ISO modifications; launch failures retain saved settings.

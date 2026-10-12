@@ -1,14 +1,14 @@
 <% content_for :title, "Library · PS2 Games Lab" %>
 <div class="library-layout">
-  <section class="library-section" aria-labelledby="library-heading">
-    <div class="library-hero">
+  <div class="library-hero">
     <p class="eyebrow">Your local console</p>
     <div class="section-bar">
       <h1 id="library-heading">Library</h1>
       <span class="muted"><%= pluralize(@game_images.size, "image") %></span>
     </div>
     <p class="section-description">Your games. Your settings. Ready when you are.</p>
-    </div>
+  </div>
+  <section class="library-section" aria-labelledby="library-heading">
     <% if @game_images.empty? %>
       <div class="empty-state">
         <h2>No images imported</h2>
@@ -51,6 +51,8 @@
       <% end %>
       <p class="fine-print">Only import images you have the right to use. Originals are stored privately and never modified.</p>
     </section>
+  </div>
+  <div class="library-support">
     <details class="panel setup-panel">
       <summary id="setup-heading">Configuration &amp; requirements</summary>
       <div class="setup-instructions">

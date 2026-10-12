@@ -8,7 +8,7 @@ A local Rails workspace for importing PS2 disc images, tuning per-game PCSX2 pla
 
 ## Interface
 
-The PlayStation-inspired library presents imported games as a responsive tile grid, with search and import tools below. Each game opens a dedicated hub with a prominent launch action and per-game settings. The optional AI assistant, configuration requirements, original-image metadata, and controller guide expand only when needed.
+The PlayStation-inspired landing page uses a shared heading and a proportional desktop grid: the library occupies about five-eighths of the content width, with compact search/import panels stacked beside it. Game artwork has bounded height, tiles adapt to the available library width, and configuration/controller guides sit in a separate supporting row. Tablet layouts put search and import beneath the library; mobile stacks all panels. Each game opens a dedicated hub with a prominent launch action, per-game settings, and optional expandable AI.
 
 The interface uses a dark navy canvas, electric-blue actions, soft blue lighting, rounded panels, and large sans-serif headings. Disc tiles use original abstract artwork rather than downloaded covers or official logos. This is an independent local lab, not an official PlayStation interface. Controls stack on narrow screens; keyboard focus stays visible and reduced-motion preferences are respected. Pages use normal document scrolling. Existing SSE delivery, composer drafts, provider/model selection, and tuning persistence are unchanged.
 
@@ -18,7 +18,7 @@ These running-application captures show the console-style library and the game h
 
 ### Import and library
 
-![PlayStation-inspired dark library with local disc tiles, title search, and ISO import](docs/images/library.png)
+![Proportional console library with compact stacked search and import panels](docs/images/library.png)
 
 ### Game hub and settings
 
