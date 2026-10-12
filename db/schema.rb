@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_12_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_12_030000) do
   create_table "game_images", force: :cascade do |t|
     t.string "name", null: false
     t.string "storage_key", null: false
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_12_020000) do
     t.text "launch_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.json "tuning_settings", default: {}, null: false
     t.index ["storage_key"], name: "index_game_images_on_storage_key", unique: true
   end
 

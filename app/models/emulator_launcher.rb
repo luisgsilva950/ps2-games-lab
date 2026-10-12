@@ -12,20 +12,26 @@ class EmulatorLauncher
 
     executable = executable_path
     bios = bios_file
-    data_root = prepare_configuration(bios)
+    data_root = configuration_root(bios)
     image_path = verified_image_path(game_image)
 
     # PCSX2 Qt CLI: https://pcsx2.net/docs/advanced/cli
     # -bios boots the system menu; it does NOT select a BIOS file.
-    pid = Process.spawn([ executable, executable ], "-datapath", data_root.to_s, "-batch", "--", image_path.to_s,
-      in: File::NULL, out: File::NULL, err: File::NULL)
-    Process.detach(pid)
+    Pcsx2GameSettings.with_launch_lock(data_root) do
+      prepare_configuration(bios)
+      Pcsx2GameSettings.new(data_root.join("PCSX2")).apply(image_path, game_image.tuning_settings)
+      arguments = [ "-datapath", data_root.to_s, "-batch" ]
+      arguments << "-unlimited" if game_image.tuning_settings["frame_limit"] == "disabled"
+      pid = Process.spawn([ executable, executable ], *arguments, "--", image_path.to_s,
+        in: File::NULL, out: File::NULL, err: File::NULL)
+      Process.detach(pid)
+    end
     game_image.update!(launch_status: "launched", launch_error: nil)
     :launched
   rescue ConfigurationError => error
     game_image.update!(launch_status: "not_configured", launch_error: error.message)
     :not_configured
-  rescue ImageError => error
+  rescue ImageError, Pcsx2GameSettings::Error => error
     game_image.update!(launch_status: "failed", launch_error: error.message)
     :failed
   rescue StandardError

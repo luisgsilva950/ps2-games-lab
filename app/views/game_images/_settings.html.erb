@@ -1,0 +1,26 @@
+<section class="panel tuning-panel" aria-labelledby="settings-heading">
+  <div class="playback-heading"><h2 id="settings-heading">Game settings</h2><span class="muted">PCSX2 tuning · no ISO changes</span></div>
+  <p>Choose overrides for this game, or inherit your PCSX2 settings. Saved choices apply on the next launch, not to a running session.</p>
+  <% if @game_image.errors.any? %>
+    <div class="notice notice-error" role="alert"><%= @game_image.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <%= form_with url: game_image_settings_path(@game_image), method: :patch, scope: :game_image, data: { action: "submit->refresh#preserveWorkspace" }, class: "settings-form" do |form| %>
+    <%= form.fields_for :tuning_settings do |settings| %>
+      <div class="settings-fields">
+        <% GameImage::TUNING_OPTIONS.each do |key, choices| %>
+          <div>
+            <%= settings.label key, { "resolution" => "Internal resolution", "renderer" => "Renderer", "filtering" => "Texture filtering", "audio_sync" => "Audio synchronization", "frame_limit" => "Frame limiter" }.fetch(key) %>
+            <%= settings.select key, choices, { include_blank: "Inherit PCSX2 settings", selected: @game_image.tuning_settings[key] }, data: { refresh_target: "tuning", tuning_key: key } %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+    <p class="fine-print">Higher resolution needs more GPU power. Renderer support depends on your computer. Unlimited speed and disabled audio synchronization can affect timing; these options do not unlock a game's native frame rate.</p>
+    <div class="settings-actions">
+      <%= form.button "Save settings", name: "commit", value: "save", class: "button button-secondary" %>
+      <%= form.button "Save and launch", name: "commit", value: "save_and_launch", class: "button button-primary", disabled: !@game_image.ready? || !launch_configured %>
+    </div>
+  <% end %>
+  <%= button_to "Reset to inherit", game_image_settings_path(@game_image), method: :delete, class: "button button-secondary", form: { data: { action: "submit->refresh#preserveWorkspace" } } %>
+  <p class="fine-print">Reset clears only these lab tuning overrides on the next launch. Native controller mappings, saves, and unrelated PCSX2 settings are preserved. No existing emulator session is closed.</p>
+</section>

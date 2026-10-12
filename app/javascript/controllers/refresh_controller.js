@@ -5,7 +5,7 @@ const draftSnapshots = new Map()
 
 export default class extends Controller {
   static values = { active: Boolean, url: String }
-  static targets = ["draft", "messages", "provider", "model"]
+  static targets = ["draft", "messages", "provider", "model", "conversation", "tuning"]
 
   connect() {
     this.storageKey = `ps2-chat-draft:${window.location.pathname}`
@@ -21,6 +21,10 @@ export default class extends Controller {
       if (this.hasProviderTarget && saved.provider) this.providerTarget.value = saved.provider
       if (this.hasModelTarget && saved.model !== undefined) this.modelTarget.value = saved.model
       this.element.dispatchEvent(new CustomEvent("provider:restore"))
+      if (this.hasConversationTarget && saved.conversationOpen !== undefined) this.conversationTarget.open = saved.conversationOpen
+      if (saved.tuning) this.tuningTargets.forEach((field) => {
+        if (Object.hasOwn(saved.tuning, field.dataset.tuningKey)) field.value = saved.tuning[field.dataset.tuningKey]
+      })
       const focused = saved.focusedTarget && this[`${saved.focusedTarget}Target`]
       if (focused && !focused.disabled) {
         focused.focus({ preventScroll: true })
@@ -52,8 +56,13 @@ export default class extends Controller {
     const focusedTarget = ["draft", "provider", "model"].find((name) =>
       this[`has${name[0].toUpperCase()}${name.slice(1)}Target`] && document.activeElement === this[`${name}Target`]
     )
-    this.rememberComposer(this.hasDraftTarget ? this.draftTarget.value : "", focusedTarget)
+    this.rememberComposer(this.hasDraftTarget ? this.draftTarget.value : "", focusedTarget, true)
     Turbo.visit(window.location.href, { action: "replace" })
+  }
+
+  preserveWorkspace() {
+    this.events?.close()
+    this.rememberComposer(this.hasDraftTarget ? this.draftTarget.value : "")
   }
 
   prepareSubmission() {
@@ -61,12 +70,14 @@ export default class extends Controller {
     this.rememberComposer("", "draft")
   }
 
-  rememberComposer(content, focusedTarget) {
+  rememberComposer(content, focusedTarget, preserveTuning = false) {
     const focused = focusedTarget && this[`${focusedTarget}Target`]
     const saved = {
       content,
       provider: this.hasProviderTarget ? this.providerTarget.value : undefined,
       model: this.hasModelTarget ? this.modelTarget.value : undefined,
+      conversationOpen: this.hasConversationTarget ? this.conversationTarget.open : undefined,
+      tuning: preserveTuning ? Object.fromEntries(this.tuningTargets.map((field) => [field.dataset.tuningKey, field.value])) : undefined,
       focusedTarget,
       start: focused?.selectionStart,
       end: focused?.selectionEnd,

@@ -32,14 +32,12 @@
         <% if @game_image.launch_error.present? %><p class="error-text" role="alert"><%= @game_image.launch_error %></p><% end %>
       </section>
 
-    <section class="panel conversation" aria-labelledby="conversation-heading">
-      <div class="conversation-header">
-        <h2 id="conversation-heading">Conversation</h2>
-        <span class="muted">AI assistant</span>
-      </div>
+    <%= render "game_images/settings", launch_configured: launch_configured %>
+    <details class="panel conversation" data-refresh-target="conversation">
+      <summary class="conversation-header" id="conversation-heading">Optional AI assistant · conversation</summary>
       <p class="conversation-disclosure">Your next message, prior completed conversation history, and image metadata (name, size, hash) go to <strong data-provider-target="label"><%= ChatProvider::LABELS[selected_provider] || "the selected provider" %></strong>. Switching vendors transfers that history to the newly selected vendor. ISO bytes are not sent. Chat does not modify your image.</p>
       <div class="messages" data-refresh-target="messages" aria-live="polite" aria-relevant="additions text">
-        <%= render "messages", messages: messages %>
+        <%= render "game_images/messages", messages: messages %>
       </div>
       <%= form_with url: game_image_messages_path(@game_image), data: { action: "submit->refresh#prepareSubmission" }, class: "chat-form" do |form| %>
         <div class="provider-fields">
@@ -60,7 +58,7 @@
           <%= form.submit "Send message", class: "button button-primary", disabled: !@game_image.ready? || reply_pending %>
         </div>
       <% end %>
-    </section>
+    </details>
     <div class="workspace-details">
       <details class="panel original-details">
         <summary id="image-heading">Original image · <%= @game_image.byte_size.present? ? number_to_human_size(@game_image.byte_size) : "Size pending" %> · Read-only</summary>
@@ -73,7 +71,7 @@
         </dl>
         </div>
       </details>
-      <%= render "dualsense_setup" %>
+      <%= render "game_images/dualsense_setup" %>
     </div>
   </div>
 </div>

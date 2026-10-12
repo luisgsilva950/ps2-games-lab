@@ -1,6 +1,15 @@
 require "digest"
 require "fileutils"
 class GameImage < ApplicationRecord
+  TUNING_OPTIONS = {
+    "resolution" => [ [ "Native (1×)", "native" ], [ "2× native", "2x" ], [ "3× native", "3x" ], [ "4× native", "4x" ], [ "6× native", "6x" ] ],
+    "renderer" => [ [ "Automatic", "auto" ], [ "Metal", "metal" ], [ "Vulkan", "vulkan" ], [ "OpenGL", "opengl" ], [ "Software", "software" ] ],
+    "filtering" => [ [ "PS2 automatic", "automatic" ], [ "Nearest", "nearest" ], [ "Bilinear (forced)", "bilinear" ] ],
+    "audio_sync" => [ [ "Time stretch", "timestretch" ], [ "Disabled", "none" ] ],
+    "frame_limit" => [ [ "Enabled (normal speed)", "enabled" ], [ "Disabled (unlimited)", "disabled" ] ]
+  }.freeze
+  before_validation :remove_inherited_tuning
+  validate :supported_tuning_settings
   has_many :messages, -> { order(:id) }, dependent: :destroy
  validates :name, :storage_key, presence: true
  UUID_FORMAT = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
@@ -64,6 +73,23 @@ class GameImage < ApplicationRecord
  end
 
  private
+
+ def remove_inherited_tuning
+   self.tuning_settings = tuning_settings.reject { |_key, value| value == "" } if tuning_settings.is_a?(Hash)
+ end
+
+ def supported_tuning_settings
+   unless tuning_settings.is_a?(Hash)
+     errors.add(:tuning_settings, "must be a settings object")
+     return
+   end
+   tuning_settings.each do |key, value|
+     choices = TUNING_OPTIONS[key]
+     unless choices && value.is_a?(String) && choices.any? { |_label, option| option == value }
+       errors.add(:tuning_settings, "contains an unsupported #{key.to_s.humanize.downcase} choice")
+     end
+   end
+ end
 
  def storage_path(filename)
    raise "Invalid storage identity" unless storage_key&.match?(UUID_FORMAT)

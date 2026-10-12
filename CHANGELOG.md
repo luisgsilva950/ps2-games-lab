@@ -2,6 +2,9 @@
 
 ## 2026-10-12
 
+- Added validated per-game PCSX2 2.8.2 resolution, renderer, texture filtering, audio synchronization, and frame-limiter settings. Save, reset-to-inherit, and save-and-launch work without AI credentials or ISO modifications; launch failures retain saved settings.
+- Made settings the primary game workspace controls and kept the existing SSE assistant optional/collapsible. Composer drafts, provider/model selections, and expanded state survive tuning submissions; final stream refreshes also preserve unsaved tuning choices.
+- Apply tuning through native per-disc PCSX2 configuration while retaining preexisting native tuning values for reset, unrelated controller overrides, and saves. Refuse playback launches while PCSX2 is already running rather than closing the user's session.
 - Removed lab control mapping, keyboard profiles, game assignments, and PCSX2 import/export hooks. Existing native PCSX2 settings and exported profiles remain user-controlled.
 - Documented PS5 DualSense USB/Bluetooth setup and configuration in the lab-launched PCSX2 instance; added an in-app setup guide.
 - Redesigned the library and conversation workspace with a neutral palette, compact navigation, clearer hierarchy, and responsive layouts. ISO drop/import, SSE replies, draft preservation, and playback configuration states remain intact.

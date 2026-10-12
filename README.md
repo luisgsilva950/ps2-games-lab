@@ -1,16 +1,16 @@
 # PS2 Games Lab
 
-A local Rails workspace for importing PS2 disc images, chatting about modifications through Google Gemini or an OpenAI-compatible endpoint, and opening preserved originals in PCSX2.
+A local Rails workspace for importing PS2 disc images, tuning per-game PCSX2 playback without changing ISO bytes, and optionally discussing games through Google Gemini or an OpenAI-compatible endpoint.
 
-**Working today:** PS2 title search on CoolROM with external game-page links, ISO drag-and-drop import, private read-only originals with SHA-256 verification, persistent conversations, incremental replies over Server-Sent Events (SSE), and a configured desktop launcher.
+**Working today:** PS2 title search on CoolROM with external game-page links, ISO drag-and-drop import, private read-only originals with SHA-256 verification, per-game PCSX2 tuning, persistent optional conversations, incremental replies over Server-Sent Events (SSE), and a configured desktop launcher.
 
 **Not implemented:** binary inspection tools for the model, patch proposals/approval, modified-image builds, game-specific asset editors, or online multiplayer. Chat cannot modify or inspect the ISO. This application is a lab, not a universal natural-language game editor.
 
 ## Interface
 
-The library and conversation occupy the full content width, without a permanent setup sidebar. Import uses a compact horizontal panel below the library; playback is a compact action bar above the conversation. Configuration requirements, original-image metadata, and the PS5 controller guide expand only when needed, so auxiliary information does not create a long column beside empty primary content.
+The library and game workspace occupy the full content width, without a permanent setup sidebar. Import uses a compact horizontal panel below the library. Game settings are the primary workspace controls beneath playback; the optional AI assistant opens in a collapsible conversation panel. Configuration requirements, original-image metadata, and the PS5 controller guide expand only when needed.
 
-The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. Import, playback, and provider/model controls stack on narrow screens. Pages use normal document scrolling, not nested scroll panes. Streamed message updates preserve composer drafts and the next reply’s provider/model selection. Controller mapping stays in PCSX2.
+The design uses a warm off-white canvas, ink text, a muted blue accent, thin borders, and compact navigation instead of gradients, decorative tiles, or numbered onboarding panels. Controls stack on narrow screens. Pages use normal document scrolling, not nested scroll panes. Streamed message updates preserve composer drafts, provider/model selection, the assistant's expanded state, and unsaved tuning choices. Saving or resetting tuning also preserves the composer. Controller mapping stays in PCSX2.
 
 ## Screenshots
 
@@ -93,7 +93,7 @@ The Rails backend sends the search title to `https://coolrom.com/search` with th
 1. Extract your disc image before importing: **.iso only**. ZIP, 7z, CHD, and installers are not accepted.
 2. Drop one ISO into the box to start automatically, or use the file picker and Import game button.
 3. Watch upload progress. A background job checks the ISO9660 primary volume descriptor, copies the image into private managed storage, verifies its hash, and makes the original read-only.
-4. The game workspace opens. Choose the provider and model; requests can be sent after import when the selected vendor is configured.
+4. The game workspace opens with per-game settings. AI is optional: expand the assistant and choose a provider/model if you want to chat.
 5. PCSX2 launches automatically after import when configured. Missing setup does not prevent import or chat.
 
 The ISO signature check identifies the supported disc format; it does not prove PS2 compatibility, authenticity, malware safety, or bootability. Keep your own backups. The application does not change the selected source file.
@@ -113,11 +113,31 @@ PCSX2_BIOS_PATH="/absolute/path/to/your/ps2-bios.bin"
 
 The executable name/location above is illustrative: use the actual executable inside your installed .app, **not the .app directory**. PCSX2_BIOS_PATH can be a readable BIOS file or a directory; directory mode picks the first sorted readable .bin/.rom file. Prefer an explicit main BIOS file so auxiliary ROM files are not selected by mistake. PCSX2 is responsible for validating the firmware.
 
-The launcher uses the [documented PCSX2 Qt CLI](https://pcsx2.net/docs/advanced/cli) with a fixed argument array: -datapath, -batch, --, and the managed ISO. It never constructs a shell command from a prompt or filename. It verifies image size/hash and refuses symlink/hardlink originals before launching.
+The launcher uses the [documented PCSX2 Qt CLI](https://pcsx2.net/docs/advanced/cli) with a fixed argument array: -datapath, -batch, optionally -unlimited, --, and the managed ISO. It never constructs a shell command from a prompt or filename. It verifies image size/hash and refuses symlink/hardlink originals before launching. If PCSX2 is already running, close it normally first; the lab refuses to launch over an active session and never kills it.
 
 Settings and saves are isolated under storage/pcsx2/<digest-of-resolved-BIOS-path>/PCSX2/, separate from your normal PCSX2 profile. PCSX2 2.8.2 appends `PCSX2` to the supplied `-datapath`; the launcher creates `PCSX2/inis/PCSX2.ini` there to select the supplied BIOS. Existing settings are preserved. Configure your DualSense/controller within this lab-specific emulator profile. Existing emulator sessions are not killed automatically.
 
 **Launched means a process was started—not that a window rendered, the BIOS loaded, or the game booted.** An emulator that exits after startup may still have this status. Verify actual playback in the desktop window. A browser cannot embed or directly launch PCSX2; the local Rails backend starts it on the same machine.
+
+## Tune a game without changing its ISO
+
+Run `bin/rails db:migrate` after upgrading. Each imported game stores its own validated tuning choices in Active Record; the default empty settings object inherits PCSX2 configuration. No model credentials are required.
+
+| Setting | Available overrides |
+| --- | --- |
+| Internal resolution | Native, 2×, 3×, 4×, 6× |
+| Renderer | Automatic, Metal, Vulkan, OpenGL, Software |
+| Texture filtering | PS2 automatic, nearest, forced bilinear |
+| Audio synchronization | Time stretch, disabled |
+| Frame limiter | Enabled (normal speed), disabled (unlimited) |
+
+Every field also offers **Inherit PCSX2 settings**. **Save settings** persists choices without starting the emulator. **Save and launch** saves first, then invokes the same original-image launcher; a setup or launch failure leaves the saved choices intact and reports playback failure separately. **Launch original** uses the last saved choices, not unsaved form edits.
+
+The launcher applies graphics/audio overrides to the identified disc's native `PCSX2/gamesettings/<serial>_<CRC>.ini` inside the existing BIOS-specific lab profile. It preserves unrelated keys, controller overrides, and saves, and remembers prior native tuning values in a small lab-owned sidecar. **Reset to inherit** clears only the database choices; on the next launch, lab overrides are removed and preexisting native values restored. Nothing changes in a running session. Disc identification or safe configuration failures are explicit, not silently ignored.
+
+These are PCSX2 2.8.2 settings, not game patches. Higher resolution costs GPU resources; renderers depend on platform support, and software rendering may ignore hardware scaling/filtering. Unlimited speed and disabled audio synchronization can affect timing; they do not unlock a game's native frame rate. Async audio is not offered because PCSX2 2.8.2 removed it. Actual boot, visuals, audio, and gameplay require checking the separate PCSX2 window.
+
+Local verification with PCSX2 2.8.2 observed Midnight Club 3's intro running with Metal at 1024×896 (2×), the selected time-stretch audio backend, and the preserved controller profile. Reset followed by another launch restored Automatic (Metal) at 512×448 (1×). A second launch while PCSX2 was running was refused without closing that session. These checks prove configuration consumption and boot, not improved sound, higher gameplay FPS, or gameplay compatibility.
 
 ## Set up a PS5 DualSense controller
 
@@ -159,9 +179,11 @@ bin/bundler-audit check --update
 bin/importmap audit
 ~~~
 
-The integration suite uses deterministic synthetic images, real SQLite/Active Record, and a local HTTP streaming fixture at the provider boundary. It covers source preservation, read-only exact copies, duplicate jobs, rejected archives/invalid images, existing-output collisions, chat context ordering, pending-request exclusion, provider failures/secret redaction, unsafe or mutated launch inputs, SSE reconnect snapshots, HTML escaping, and missing-image errors.
+The integration suite uses deterministic synthetic images, real SQLite/Active Record, and a local HTTP streaming fixture at the provider boundary. It covers source preservation, read-only exact copies, duplicate jobs, rejected archives/invalid images, existing-output collisions, chat context ordering, pending-request exclusion, provider failures/secret redaction, unsafe or mutated launch inputs, SSE reconnect snapshots, HTML escaping, and missing-image errors. Per-game settings coverage includes every allowed choice, inheritance, malformed/unsupported values, cross-game isolation, save-before-launch orchestration, failed-launch persistence, reset, and unchanged original bytes/permissions.
 
 Observed verification for this release:
+
+- Per-game settings integration checks: 11 tests, 103 assertions passed; development migration applied. Browser interaction confirmed the optional assistant controls and preserved an unsent composer draft, provider/model selection, expanded state, and unsaved 3× resolution through the workspace refresh path; the 390px viewport had no horizontal overflow.
 
 - 14 integration tests, 90 assertions passed, including storage-parent and reply-lock symlink regressions that failed against the previous implementation.
 - Browser file-picker upload and automatic drop import completed through the real Solid Queue worker.

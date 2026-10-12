@@ -81,9 +81,11 @@ class ImageLaunchTest < ActionDispatch::IntegrationTest
        assert_equal({ in: File::NULL, out: File::NULL, err: File::NULL }, options)
        12_345
      end
-     Process.stub(:spawn, spawn) do
-       Process.stub(:detach, ->(pid) { assert_equal 12_345, pid }) { post game_image_launch_path(@image) }
-     end
+    Pcsx2GameSettings.stub(:ensure_stopped!, nil) do
+      Process.stub(:spawn, spawn) do
+        Process.stub(:detach, ->(pid) { assert_equal 12_345, pid }) { post game_image_launch_path(@image) }
+      end
+    end
      assert_redirected_to game_image_path(@image)
      assert_equal 1, calls.size
      assert_equal "launched", @image.reload.launch_status
@@ -97,7 +99,9 @@ class ImageLaunchTest < ActionDispatch::IntegrationTest
 
  test "process startup failure preserves the ready original and reports launch failure" do
    with_original do
-     Process.stub(:spawn, ->(*) { raise Errno::EACCES }) { post game_image_launch_path(@image) }
+    Pcsx2GameSettings.stub(:ensure_stopped!, nil) do
+      Process.stub(:spawn, ->(*) { raise Errno::EACCES }) { post game_image_launch_path(@image) }
+    end
      assert_redirected_to game_image_path(@image)
      assert_equal "failed", @image.reload.launch_status
      assert_equal "ready", @image.status
