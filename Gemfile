@@ -54,7 +54,7 @@ group :development do
   gem "web-console"
 end
 
-gem "ruby_llm", "~> 2.1.0"
+gem "ruby_llm", "~> 2.1.1"
 
 gem "minitest", "~> 5.27", group: :test
 
