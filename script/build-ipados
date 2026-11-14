@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Builds a physical-device IPA. It is NOT installable until re-signed/provisioned.
+set -euo pipefail
+
+if [[ "${1:-}" == "--help" ]]; then
+  echo "Usage: script/build-ipados"
+  echo "Requires macOS, full Xcode, CMake, Python 3 and Git. Output: tmp/ipados/dist/"
+  echo "The experimental IPA needs device signing/provisioning and JIT activation."
+  exit 0
+fi
+if [[ $# -ne 0 ]]; then
+  echo "Unexpected arguments. Run script/build-ipados --help." >&2
+  exit 1
+fi
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "An iPadOS build requires macOS and full Xcode. Use the Build iPadOS GitHub Action." >&2
+  exit 1
+fi
+for dependency in git cmake python3 xcrun codesign ditto shasum; do
+  command -v "$dependency" >/dev/null || { echo "Missing: $dependency" >&2; exit 1; }
+done
+xcrun --sdk iphoneos --show-sdk-path >/dev/null
+xcrun --find xcodebuild >/dev/null
+
+project="$(cd "$(dirname "$0")/.." && pwd)"
+revision="$(tr -d '\r\n' < "$project/ios/play-revision.txt")"
+if [[ ! "$revision" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "ios/play-revision.txt must contain a full commit SHA." >&2
+  exit 1
+fi
+workspace="$project/tmp/ipados"
+mkdir -p "$workspace"
+# A fresh tree prevents stale binaries or local emulator changes entering the IPA.
+build_root="$(mktemp -d "$workspace/build.XXXXXX")"
+source="$build_root/Play"
+build="$build_root/build"
+dist="$build_root/dist"
+mkdir -p "$source" "$dist"
+echo "Building Play! $revision in $build_root"
+git -C "$source" init --quiet
+git -C "$source" remote add origin https://github.com/jpd002/Play-.git
+git -C "$source" fetch --depth 1 origin "$revision"
+git -C "$source" checkout --detach FETCH_HEAD
+git -C "$source" submodule update --init --recursive --depth 1
+python3 "$project/ios/prepare.py" "$source" "$project"
+
+cmake -S "$source" -B "$build" -G Xcode \
+  "-DCMAKE_TOOLCHAIN_FILE=$source/deps/Dependencies/cmake-ios/ios.cmake" \
+  -DTARGET_IOS=ON -DBUILD_TESTS=OFF -DBUILD_PSFPLAYER=OFF \
+  -DBUILD_LIBRETRO_CORE=OFF -DCMAKE_DISABLE_FIND_PACKAGE_Vulkan=TRUE \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake --build "$build" --config Release --target Play -- CODE_SIGNING_ALLOWED=NO
+
+app="$build/Source/ui_ios/Release-iphoneos/Play.app"
+test -d "$app"
+python3 - "$app/Info.plist" <<'PY'
+import plistlib
+import sys
+with open(sys.argv[1], "rb") as stream:
+    info = plistlib.load(stream)
+assert info["CFBundleIdentifier"] == "com.luisgsilva950.ps2gameslab"
+assert info["CFBundleExecutable"] == "Play"
+assert 2 in info["UIDeviceFamily"], "The bundle must support iPad"
+assert info["UIFileSharingEnabled"] and info["LSSupportsOpeningDocumentsInPlace"]
+PY
+xcrun lipo "$app/Play" -verify_arch arm64
+if [[ ! -d "$app/Main.storyboardc" && ! -d "$app/Base.lproj/Main.storyboardc" ]]; then
+  echo "The compiled main storyboard is missing from the app bundle." >&2
+  exit 1
+fi
+ditto "$source/PS2GamesLabNotices" "$app/PS2GamesLabNotices"
+if [[ -d "$app/Frameworks" ]]; then
+  while IFS= read -r -d '' library; do
+    codesign --force --sign - "$library"
+  done < <(find "$app/Frameworks" -type f -name '*.dylib' -print0)
+fi
+codesign --force --sign - "$app"
+codesign --verify --deep --strict "$app"
+
+mkdir -p "$build_root/package/Payload"
+ditto "$app" "$build_root/package/Payload/Play.app"
+ditto -c -k --keepParent "$build_root/package/Payload" "$dist/PS2GamesLab-unsigned.ipa"
+ditto "$source/PS2GamesLabNotices" "$dist/PS2GamesLabNotices"
+cp "$project/docs/ipad.md" "$dist/README.md"
+(
+  cd "$dist"
+  shasum -a 256 PS2GamesLab-unsigned.ipa > SHA256SUMS
+)
+
+# Publish only a fully built and checked result. Keep failed workspaces for diagnostics.
+if [[ -e "$workspace/dist" ]]; then
+  mv "$workspace/dist" "$workspace/dist.previous.$(date +%s).$$"
+fi
+mv "$dist" "$workspace/dist"
+echo "IPA and notices: $workspace/dist"
+echo "Build verified. Installation, JIT, game boot, audio and controls need a real iPad check."

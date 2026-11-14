@@ -26,6 +26,15 @@ These running-application captures show the console-style library and the game h
 
 ## Run locally
 
+### Experimental iPadOS executable
+
+For on-device PS2 emulation without a running Rails server or streaming host, see
+[the experimental native iPadOS build](docs/ipad.md). It builds a separate Play!-based
+companion IPA through GitHub Actions. This is not a port of the Rails UI or PCSX2.
+Device signing/provisioning and JIT activation are still required; installation and
+gameplay on iPad have not been verified. A successful build alone does not make the
+IPA directly installable or guarantee compatibility with current iPadOS versions.
+
 Requirements: Ruby **3.4.2** (see .ruby-version), Bundler, and enough free disk space for multi-gigabyte images. SQLite is used through Active Record; no Redis or PostgreSQL is needed. Import works without a model or emulator configured.
 
 ~~~sh
