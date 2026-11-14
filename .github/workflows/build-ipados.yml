@@ -1,0 +1,40 @@
+name: Build iPadOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/build-ipados.yml
+      - ios/**
+      - script/build-ipados
+      - docs/ipad.md
+  push:
+    branches: [ main ]
+    paths:
+      - .github/workflows/build-ipados.yml
+      - ios/**
+      - script/build-ipados
+      - docs/ipad.md
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check packaging and revision validation
+        run: |
+          bash -n script/build-ipados
+          python3 -m unittest discover -s ios -p 'test_*.py' -v
+      - name: Build native arm64 app and package IPA
+        run: script/build-ipados
+      - name: Upload IPA, checksum, provenance and licenses
+        uses: actions/upload-artifact@v4
+        with:
+          name: PS2GamesLab-iPadOS-unsigned
+          path: tmp/ipados/dist/
+          if-no-files-found: error
+          retention-days: 14
